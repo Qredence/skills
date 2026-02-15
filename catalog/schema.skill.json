@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Qredence/skills/catalog/schema.skill.json",
+  "title": "DSPy Skill Metadata Schema",
+  "description": "JSON Schema for skill.yaml - the canonical metadata for a DSPy skill",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "version",
+    "description",
+    "tags",
+    "dspy",
+    "io",
+    "behavior",
+    "permissions",
+    "safety",
+    "eval"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Unique kebab-case identifier"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable skill name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?$",
+      "description": "Semantic version"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 200,
+      "description": "1-2 sentence description"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Searchable tags"
+    },
+    "dspy": {
+      "type": "object",
+      "required": ["module", "signatures", "dependencies"],
+      "properties": {
+        "module": {
+          "type": "string",
+          "pattern": "^skills\\.[a-z_]+\\.src\\.skill:[A-Z][a-zA-Z0-9]*$",
+          "description": "Import path to DSPy Module class"
+        },
+        "signatures": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^skills\\.[a-z_]+\\.src\\.skill:[A-Z][a-zA-Z0-9]*$"
+          },
+          "minItems": 1,
+          "description": "Import paths to DSPy Signature classes"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Python dependencies with version specifiers"
+        }
+      }
+    },
+    "io": {
+      "type": "object",
+      "required": ["inputs_schema", "outputs_schema"],
+      "properties": {
+        "inputs_schema": {
+          "type": "object",
+          "description": "JSON Schema for inputs"
+        },
+        "outputs_schema": {
+          "type": "object",
+          "description": "JSON Schema for outputs"
+        }
+      }
+    },
+    "behavior": {
+      "type": "object",
+      "required": ["deterministic"],
+      "properties": {
+        "deterministic": {
+          "type": "boolean",
+          "description": "Whether outputs are deterministic"
+        },
+        "temperature_hint": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0,
+          "default": 0.0,
+          "description": "Recommended temperature"
+        },
+        "max_tokens_hint": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Recommended max tokens"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Behavioral notes"
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "required": ["network", "filesystem_read", "filesystem_write", "external_tools"],
+      "properties": {
+        "network": {
+          "type": "boolean",
+          "default": false,
+          "description": "Requires network access"
+        },
+        "filesystem_read": {
+          "type": "boolean",
+          "default": false,
+          "description": "Requires filesystem read"
+        },
+        "filesystem_write": {
+          "type": "boolean",
+          "default": false,
+          "description": "Requires filesystem write"
+        },
+        "external_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "External tools required"
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "required": ["level", "risks", "mitigations", "data_policy"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Safety classification"
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Known risks"
+        },
+        "mitigations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Risk mitigations"
+        },
+        "data_policy": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Data handling policies"
+        }
+      }
+    },
+    "eval": {
+      "type": "object",
+      "required": ["golden_set", "metrics"],
+      "properties": {
+        "golden_set": {
+          "type": "string",
+          "pattern": "^eval/.*\\.jsonl$",
+          "description": "Path to golden evaluation set"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["exact_match", "contains", "json_schema_valid"]
+          },
+          "minItems": 1,
+          "description": "Evaluation metrics"
+        }
+      }
+    },
+    "owner": {
+      "type": "string",
+      "description": "Skill owner (optional)"
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      },
+      "description": "Additional resources (optional)"
+    }
+  },
+  "additionalProperties": false
+}

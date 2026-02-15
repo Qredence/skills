@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Qredence/skills/catalog/schema.catalog.json",
+  "title": "Skills Catalog Schema",
+  "description": "JSON Schema for catalog/skills.json - generated index of all skills",
+  "type": "object",
+  "required": ["version", "generated_at", "skills"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Catalog format version"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of catalog generation"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/skill_entry"
+      },
+      "description": "List of all skills, sorted by id"
+    }
+  },
+  "definitions": {
+    "skill_entry": {
+      "type": "object",
+      "required": ["id", "name", "version", "description", "tags", "safety_level", "permissions"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "safety_level": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "network": {
+              "type": "boolean"
+            },
+            "filesystem_read": {
+              "type": "boolean"
+            },
+            "filesystem_write": {
+              "type": "boolean"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "dspy_module": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
