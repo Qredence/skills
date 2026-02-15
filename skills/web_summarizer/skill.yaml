@@ -1,0 +1,63 @@
+name: web_summarizer
+version: "0.1.0"
+description: "Summarizes web content into concise, actionable insights"
+author: "Qredence"
+tags:
+  - summarization
+  - web
+  - content
+  - nlp
+
+# DSPy configuration
+module_class: "WebSummarizerModule"
+signature_class: "WebSummarizerSignature"
+
+# Input schema
+input_schema:
+  name: "WebSummarizerInput"
+  description: "Input schema for web summarizer"
+  schema:
+    type: "object"
+    properties:
+      url:
+        type: "string"
+        description: "URL of the web page to summarize"
+      max_length:
+        type: "integer"
+        description: "Maximum length of summary in words"
+        default: 200
+    required:
+      - url
+
+# Output schema
+output_schema:
+  name: "WebSummarizerOutput"
+  description: "Output schema for web summarizer"
+  schema:
+    type: "object"
+    properties:
+      summary:
+        type: "string"
+        description: "Generated summary of the web content"
+      key_points:
+        type: "array"
+        items:
+          type: "string"
+        description: "Key points extracted from the content"
+    required:
+      - summary
+      - key_points
+
+# Safety permissions
+safety_permissions:
+  internet_access: true
+  file_system_read: false
+  file_system_write: false
+  external_api_calls: true
+  data_persistence: false
+  user_interaction: false
+  sensitive_data: false
+
+# Testing
+has_tests: true
+has_golden_evals: true
