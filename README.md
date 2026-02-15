@@ -1,268 +1,307 @@
 # Qredence Skills Registry
 
-A Python-first registry of DSPy Module/Signature skills for agent orchestration. This repository provides a structured framework for building, validating, and cataloging reusable AI agent skills powered by DSPy.
+A Python-first registry of **DSPy Module/Signature skills** for agent orchestration. Production-grade, eval-driven, safety-first, and AgenticFleet-compatible.
 
-## Features
+[![CI](https://github.com/Qredence/skills/workflows/CI/badge.svg)](https://github.com/Qredence/skills/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- 🎯 **Structured Skills**: Each skill includes metadata, DSPy modules, signatures, IO schemas, and safety permissions
-- 🔍 **Validation Tooling**: Automatic validation of skill structure and metadata
-- 📦 **Auto-Generated Catalog**: JSON catalog of all skills with searchable metadata
-- 🧪 **Testing Framework**: Built-in support for unit tests and golden evaluations
-- 🛠️ **Template Scaffold**: Quick skill generation from reusable templates
-- 🔄 **CI/CD Ready**: GitHub Actions workflow for continuous testing and validation
+## What is This?
+
+The Qredence Skills Registry is a curated collection of **reusable DSPy skills** - versioned reasoning components that can be:
+- **Discovered** via semantic tags
+- **Composed** into agent workflows
+- **Validated** against strict contracts
+- **Evaluated** with golden test sets
+- **Orchestrated** by AgenticFleet-style planners
+
+Each skill is a **DSPy Module** with explicit inputs/outputs, safety permissions, and comprehensive testing.
 
 ## Quick Start
 
-### Installation
-
 ```bash
-# Clone the repository
+# Install
 git clone https://github.com/Qredence/skills.git
 cd skills
-
-# Install dependencies
 pip install -r requirements.txt
+pip install -e packages/skills_core
 
-# Install in development mode
-pip install -e .
+# Browse skills
+python tools/validate.py --list
+
+# Use a skill
+python skills/web_summarizer/examples/minimal.py
+
+# Create your own
+python tools/new_skill.py my_skill --description "..." --tags tag1 tag2
 ```
 
-### Using a Skill
+See [QUICKSTART.md](QUICKSTART.md) for detailed guide.
 
-```python
-from skills.web_summarizer import WebSummarizer
+## Features
 
-# Initialize the skill
-skill = WebSummarizer()
+### 🎯 Strict Contracts
+- **JSON Schema validation** for all metadata
+- **DSPy Module/Signature** contract enforcement
+- **Input/output schemas** with type validation
+- **Deterministic catalog** generation
 
-# Check metadata
-print(f"Skill: {skill.metadata.name}")
-print(f"Description: {skill.metadata.description}")
+### 🔍 Discoverability
+- **AgenticFleet tag taxonomy** (reasoning, planning, memory, etc.)
+- **Semantic routing** compatible
+- **Auto-generated catalog** (catalog/skills.json)
+- **CLI search** by tags, safety level, permissions
 
-# Execute the skill
-result = skill.execute(url="https://example.com", max_length=200)
+### 🛡️ Safety First
+- **Three-tier safety levels** (low/medium/high)
+- **Explicit permissions** (network, filesystem, tools)
+- **Risk assessment** and mitigations
+- **Data handling policies**
+
+### 🧪 Eval-Driven
+- **Golden evaluation sets** (JSONL format)
+- **Three match types** (exact, contains, schema)
+- **CI integration** for regression testing
+- **Dry-run mode** for fast validation
+
+### 📦 Composable
+- **Versioned skills** (semantic versioning)
+- **Clear dependencies** declared
+- **Planner-compatible** design
+- **Independent loading** and execution
+
+## Repository Structure
+
+```
+skills/
+├── catalog/                    # Generated skill catalog
+│   ├── schema.skill.json       # JSON Schema for skill.yaml
+│   ├── schema.catalog.json     # JSON Schema for catalog
+│   └── skills.json             # Generated index (DO NOT EDIT)
+├── skills/                     # All skills
+│   ├── _templates/             # Skill templates
+│   ├── web_summarizer/         # Example: Web summarizer
+│   ├── doc_transformer/        # Example: Document transformer
+│   └── task_planner/           # Example: Task planner
+├── packages/skills_core/       # Core validation library
+├── tools/                      # CLI tools
+│   ├── validate.py             # Validate & regenerate catalog
+│   ├── new_skill.py            # Scaffold new skills
+│   └── run_eval.py             # Run golden evaluations
+├── docs/                       # Documentation
+│   ├── skill_contract.md       # Skill specification
+│   ├── tagging.md              # Tag taxonomy
+│   ├── versioning.md           # Semver rules
+│   ├── evaluation.md           # Golden eval guide
+│   └── safety.md               # Safety framework
+└── tests/                      # Test suite
 ```
 
-### Creating a New Skill
+## Skill Structure
 
-```bash
-# Use the CLI to generate a new skill from template
-python scripts/skills_cli.py create my_new_skill \
-    --description "My awesome skill" \
-    --author "Your Name" \
-    --tags nlp processing
+Each skill follows a strict contract:
 
-# This creates:
-# - skills/my_new_skill/
-#   - skill.yaml (metadata)
-#   - __init__.py (implementation)
-#   - golden_eval.py (evaluation examples)
-# - tests/skills/test_my_new_skill.py (tests)
+```
+skills/{skill_id}/
+├── skill.yaml              # Canonical metadata
+├── README.md               # Documentation
+├── src/
+│   └── skill.py            # DSPy Module implementation
+├── tests/
+│   └── test_contract.py    # Contract tests
+├── eval/
+│   └── golden.jsonl        # Golden evaluation set
+└── examples/
+    └── minimal.py          # Runnable example
 ```
 
 ## Available Skills
 
-### 1. Web Summarizer
-**Path**: `skills/web_summarizer`
+### Web Summarizer
+**Tags**: `summarization`, `extraction`, `web`, `nlp`  
+**Safety**: Medium (requires network access)
 
-Summarizes web content into concise, actionable insights with key points extraction.
+Summarizes web content into concise insights with key points extraction.
 
-**Usage**:
-```python
-from skills.web_summarizer import WebSummarizer
-skill = WebSummarizer()
-```
+### Document Transformer
+**Tags**: `transform`, `formatting`, `documents`  
+**Safety**: Low (pure computation)
 
-**Safety Permissions**: Requires internet access, makes external API calls
+Transforms documents between formats (markdown, HTML, plain text) and styles.
 
-### 2. Document Transformer
-**Path**: `skills/doc_transformer`
-
-Transforms documents between different formats (markdown, HTML, plain text) and writing styles.
-
-**Usage**:
-```python
-from skills.doc_transformer import DocTransformer
-skill = DocTransformer()
-```
-
-**Safety Permissions**: No special permissions required
-
-### 3. Task Planner
-**Path**: `skills/task_planner`
+### Task Planner
+**Tags**: `planning`, `decomposition`, `reasoning`, `orchestration`  
+**Safety**: Low (pure computation)
 
 Plans and breaks down complex tasks into actionable subtasks with dependencies.
-
-**Usage**:
-```python
-from skills.task_planner import TaskPlanner
-skill = TaskPlanner()
-```
-
-**Safety Permissions**: No special permissions required
-
-## Skill Structure
-
-Each skill follows this structure:
-
-```
-skills/
-  skill_name/
-    skill.yaml          # Metadata and configuration
-    __init__.py         # DSPy module and skill implementation
-    golden_eval.py      # Golden evaluation examples
-tests/
-  skills/
-    test_skill_name.py  # Unit tests
-```
-
-### skill.yaml Format
-
-```yaml
-name: skill_name
-version: "0.1.0"
-description: "Skill description"
-author: "Author Name"
-tags:
-  - tag1
-  - tag2
-
-module_class: "SkillModule"
-signature_class: "SkillSignature"
-
-input_schema:
-  name: "SkillInput"
-  description: "Input schema"
-  schema:
-    type: "object"
-    properties:
-      input_field:
-        type: "string"
-    required:
-      - input_field
-
-output_schema:
-  name: "SkillOutput"
-  description: "Output schema"
-  schema:
-    type: "object"
-    properties:
-      output_field:
-        type: "string"
-    required:
-      - output_field
-
-safety_permissions:
-  internet_access: false
-  file_system_read: false
-  file_system_write: false
-  external_api_calls: false
-  data_persistence: false
-  user_interaction: false
-  sensitive_data: false
-
-has_tests: true
-has_golden_evals: true
-```
 
 ## CLI Tools
 
 ### Validate Skills
 
 ```bash
-python scripts/skills_cli.py validate --skills-dir skills
-```
+# Validate all skills and regenerate catalog
+python tools/validate.py
 
-### Generate Catalog
+# List all skills
+python tools/validate.py --list
 
-```bash
-python scripts/skills_cli.py catalog \
-    --skills-dir skills \
-    --output catalog/skills.json
+# Filter by tag
+python tools/validate.py --list --tag nlp
+
+# Show skill details
+python tools/validate.py --info web_summarizer
 ```
 
 ### Create New Skill
 
 ```bash
-python scripts/skills_cli.py create skill_name \
-    --description "Description" \
-    --author "Author" \
-    --tags tag1 tag2
+python tools/new_skill.py sentiment_analyzer \
+  --description "Analyzes sentiment of text" \
+  --tags nlp analysis classification \
+  --owner "Your Name"
 ```
+
+### Run Evaluations
+
+```bash
+# Dry run (format validation)
+python tools/run_eval.py --dry-run
+
+# Run specific skill
+python tools/run_eval.py --skill web_summarizer --dry-run
+
+# Run starter skills only
+python tools/run_eval.py --starter-only
+```
+
+## AgenticFleet Integration
+
+Skills use a semantic tag taxonomy optimized for agent orchestration:
+
+```python
+# Route based on intent and tags
+planner.route_to_skill(
+    intent="summarize this article",
+    required_tags=["summarization", "web"]
+)
+```
+
+### Tag Categories
+
+- **Core Reasoning**: `reasoning`, `planning`, `decision`, `decomposition`, `reflection`
+- **Memory & Knowledge**: `memory`, `retrieval`, `knowledge`, `embedding`
+- **Execution**: `orchestration`, `tool_use`, `workflow`, `routing`
+- **IO & Transform**: `transform`, `summarization`, `extraction`, `classification`
+- **Safety**: `safety`, `validation`, `moderation`
+- **System**: `agent`, `skill`, `planner`, `meta`
+
+See [docs/tagging.md](docs/tagging.md) for complete taxonomy.
+
+## Safety Framework
+
+All skills declare explicit permissions and safety levels:
+
+```yaml
+permissions:
+  network: true           # Can access internet
+  filesystem_read: false  # Cannot read files
+  filesystem_write: false # Cannot write files
+  external_tools: []      # No external tools
+
+safety:
+  level: "medium"         # low/medium/high
+  risks:
+    - "Fetches content from user-specified URLs"
+  mitigations:
+    - "URL validation and timeout limits"
+  data_policy:
+    - "No data persistence"
+```
+
+See [docs/safety.md](docs/safety.md) for details.
 
 ## Development
 
-### Running Tests
+### Install Dev Dependencies
 
 ```bash
-# Run all tests
-pytest tests/
-
-# Run with coverage
-pytest tests/ --cov=skills --cov-report=term-missing
-
-# Run specific test file
-pytest tests/skills/test_web_summarizer.py -v
+pip install -r requirements.txt
+pip install -e "packages/skills_core[dev]"
 ```
 
-### Validation
+### Run Tests
+
+```bash
+# All tests
+pytest
+
+# Specific skill
+pytest skills/web_summarizer/tests/
+
+# With coverage
+pytest --cov=skills --cov=packages/skills_core
+```
+
+### Lint and Format
+
+```bash
+# Check formatting
+ruff check .
+black --check .
+
+# Auto-fix
+ruff check . --fix
+black .
+```
+
+### Validate
 
 ```bash
 # Validate all skills
-python scripts/skills_cli.py validate
+python tools/validate.py
 
-# Generate catalog
-python scripts/skills_cli.py catalog
+# Check for changes
+git diff catalog/skills.json
 ```
 
-### Code Quality
+## Documentation
 
-```bash
-# Format code
-black skills/ tests/
-
-# Lint code
-ruff check skills/ tests/
-```
-
-## Architecture
-
-### Core Components
-
-- **`skills.core.base`**: Base classes for skills (Skill, SkillMetadata, SafetyPermissions)
-- **`skills.registry.catalog`**: Skill discovery and catalog generation
-- **`skills.validation.validator`**: Skill validation logic
-- **`skills.template.generator`**: Template-based skill scaffolding
-
-### Integration with DSPy
-
-Each skill implements:
-1. **DSPy Signature**: Defines input/output fields with descriptions
-2. **DSPy Module**: Implements the skill logic using DSPy primitives (ChainOfThought, etc.)
-3. **Skill Class**: Wraps the module with metadata and validation
-
-## CI/CD
-
-GitHub Actions workflow (`.github/workflows/ci.yml`) automatically:
-- Runs tests on Python 3.9, 3.10, 3.11
-- Validates all skills
-- Checks code formatting
-- Generates coverage reports
-- Creates skills catalog artifact
+- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 5 minutes
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
+- **[docs/skill_contract.md](docs/skill_contract.md)** - Complete skill specification
+- **[docs/tagging.md](docs/tagging.md)** - Tag taxonomy and guidelines
+- **[docs/versioning.md](docs/versioning.md)** - Semantic versioning rules
+- **[docs/evaluation.md](docs/evaluation.md)** - Golden evaluation framework
+- **[docs/safety.md](docs/safety.md)** - Safety levels and permissions
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Add your skill using the template
-4. Write tests and golden evaluations
-5. Validate: `python scripts/skills_cli.py validate`
-6. Submit a pull request
+We welcome contributions! To add a new skill:
+
+1. **Create** using `python tools/new_skill.py <name>`
+2. **Implement** DSPy Module in `src/skill.py`
+3. **Test** with `pytest` and `tools/run_eval.py`
+4. **Validate** with `python tools/validate.py`
+5. **Submit** PR with completed skill
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## Credits
 
-Built with [DSPy](https://github.com/stanfordnlp/dspy) by Stanford NLP
+Built with [DSPy](https://github.com/stanfordnlp/dspy) by Stanford NLP.
+
+Optimized for [AgenticFleet](https://github.com/Qredence/AgenticFleet) orchestration.
+
+## Community
+
+- **GitHub Issues**: Bug reports and feature requests
+- **GitHub Discussions**: Questions and ideas
+- **Pull Requests**: Contribute new skills
+
+---
+
+**Status**: Production-ready • **Version**: 0.1.0 • **Skills**: 3+ and growing
