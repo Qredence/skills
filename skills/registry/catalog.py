@@ -86,12 +86,12 @@ class SkillRegistry:
                 "input_schema": {
                     "name": metadata.input_schema.name,
                     "description": metadata.input_schema.description,
-                    "schema": metadata.input_schema.schema
+                    "schema": metadata.input_schema.schema_
                 },
                 "output_schema": {
                     "name": metadata.output_schema.name,
                     "description": metadata.output_schema.description,
-                    "schema": metadata.output_schema.schema
+                    "schema": metadata.output_schema.schema_
                 },
                 "safety_permissions": metadata.safety_permissions.model_dump(),
                 "has_tests": metadata.has_tests,

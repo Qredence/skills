@@ -98,10 +98,10 @@ class SkillValidator:
                 ("input_schema", metadata.input_schema),
                 ("output_schema", metadata.output_schema)
             ]:
-                if "type" not in schema.schema:
+                if "type" not in schema.schema_:
                     self.errors.append(f"{schema_name} must have 'type' property")
                 
-                if "properties" not in schema.schema and schema.schema.get("type") == "object":
+                if "properties" not in schema.schema_ and schema.schema_.get("type") == "object":
                     self.errors.append(f"{schema_name} of type 'object' must have 'properties'")
         
         except Exception as e:

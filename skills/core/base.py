@@ -25,7 +25,9 @@ class IOSchema(BaseModel):
     
     name: str = Field(..., description="Schema name")
     description: str = Field(..., description="Schema description")
-    schema: Dict[str, Any] = Field(..., description="JSON schema definition")
+    schema_: Dict[str, Any] = Field(..., description="JSON schema definition", alias="schema")
+    
+    model_config = {"populate_by_name": True}
 
 
 class SkillMetadata(BaseModel):
@@ -95,7 +97,7 @@ class Skill(ABC):
             raise ValueError("Metadata not loaded")
         
         # Simple validation - in production, use jsonschema
-        required_fields = self.metadata.input_schema.schema.get("required", [])
+        required_fields = self.metadata.input_schema.schema_.get("required", [])
         for field in required_fields:
             if field not in input_data:
                 return False
@@ -107,7 +109,7 @@ class Skill(ABC):
             raise ValueError("Metadata not loaded")
         
         # Simple validation - in production, use jsonschema
-        required_fields = self.metadata.output_schema.schema.get("required", [])
+        required_fields = self.metadata.output_schema.schema_.get("required", [])
         for field in required_fields:
             if field not in output_data:
                 return False
