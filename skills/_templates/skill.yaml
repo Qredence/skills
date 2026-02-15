@@ -1,0 +1,61 @@
+# Template skill.yaml - Replace all placeholders
+
+id: skill_id_here
+name: "Skill Name Here"
+version: "0.1.0"
+description: "Brief 1-2 sentence description here (10-200 characters)"
+tags:
+  - tag1
+  - tag2
+
+dspy:
+  module: "skills.skill_id_here.src.skill:Skill"
+  signatures:
+    - "skills.skill_id_here.src.skill:SkillSignature"
+  dependencies:
+    - "dspy-ai>=2.5.0"
+
+io:
+  inputs_schema:
+    type: "object"
+    properties:
+      input_field:
+        type: "string"
+        description: "Input field description"
+    required:
+      - input_field
+  
+  outputs_schema:
+    type: "object"
+    properties:
+      output_field:
+        type: "string"
+        description: "Output field description"
+    required:
+      - output_field
+
+behavior:
+  deterministic: false
+  temperature_hint: 0.0
+  notes:
+    - "Add behavioral notes here"
+
+permissions:
+  network: false
+  filesystem_read: false
+  filesystem_write: false
+  external_tools: []
+
+safety:
+  level: "low"
+  risks:
+    - "Describe any risks"
+  mitigations:
+    - "Describe mitigations"
+  data_policy:
+    - "Describe data handling"
+
+eval:
+  golden_set: "eval/golden.jsonl"
+  metrics:
+    - "json_schema_valid"

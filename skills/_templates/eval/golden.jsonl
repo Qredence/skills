@@ -1,0 +1,2 @@
+{"name": "basic_test", "input": {"input_field": "test value"}, "expected": {"type": "object", "properties": {"output_field": {"type": "string"}}, "required": ["output_field"]}, "match": "json_schema_valid"}
+{"name": "example_2", "input": {"input_field": "another test"}, "expected": {"type": "object", "properties": {"output_field": {"type": "string"}}, "required": ["output_field"]}, "match": "json_schema_valid"}
