@@ -1,0 +1,75 @@
+name: doc_transformer
+version: "0.1.0"
+description: "Transforms documents between different formats and styles"
+author: "Qredence"
+tags:
+  - transformation
+  - document
+  - formatting
+  - conversion
+
+# DSPy configuration
+module_class: "DocTransformerModule"
+signature_class: "DocTransformerSignature"
+
+# Input schema
+input_schema:
+  name: "DocTransformerInput"
+  description: "Input schema for document transformer"
+  schema:
+    type: "object"
+    properties:
+      document:
+        type: "string"
+        description: "Document content to transform"
+      source_format:
+        type: "string"
+        description: "Source format (e.g., markdown, plain, html)"
+      target_format:
+        type: "string"
+        description: "Target format (e.g., markdown, plain, html)"
+      style:
+        type: "string"
+        description: "Target style (e.g., formal, casual, technical)"
+        default: "formal"
+    required:
+      - document
+      - source_format
+      - target_format
+
+# Output schema
+output_schema:
+  name: "DocTransformerOutput"
+  description: "Output schema for document transformer"
+  schema:
+    type: "object"
+    properties:
+      transformed_document:
+        type: "string"
+        description: "Transformed document in target format"
+      metadata:
+        type: "object"
+        description: "Transformation metadata"
+        properties:
+          word_count:
+            type: "integer"
+          changes_made:
+            type: "array"
+            items:
+              type: "string"
+    required:
+      - transformed_document
+
+# Safety permissions
+safety_permissions:
+  internet_access: false
+  file_system_read: false
+  file_system_write: false
+  external_api_calls: false
+  data_persistence: false
+  user_interaction: false
+  sensitive_data: false
+
+# Testing
+has_tests: true
+has_golden_evals: true

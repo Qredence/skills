@@ -1,0 +1,21 @@
+# Code owners for the Qredence Skills repository
+
+# Default owners for everything
+* @Qredence/skills-maintainers
+
+# Core framework
+/packages/skills_core/ @Qredence/skills-core-team
+/tools/ @Qredence/skills-core-team
+/catalog/schema.*.json @Qredence/skills-core-team
+
+# Documentation
+/docs/ @Qredence/skills-docs-team
+/*.md @Qredence/skills-docs-team
+
+# CI/CD
+/.github/ @Qredence/skills-infra-team
+
+# Individual skills can have dedicated owners
+/skills/web_summarizer/ @Qredence/skills-web-team
+/skills/doc_transformer/ @Qredence/skills-doc-team
+/skills/task_planner/ @Qredence/skills-planning-team

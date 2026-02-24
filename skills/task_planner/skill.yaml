@@ -1,0 +1,89 @@
+name: task_planner
+version: "0.1.0"
+description: "Plans and breaks down complex tasks into actionable subtasks"
+author: "Qredence"
+tags:
+  - planning
+  - task-management
+  - decomposition
+  - orchestration
+
+# DSPy configuration
+module_class: "TaskPlannerModule"
+signature_class: "TaskPlannerSignature"
+
+# Input schema
+input_schema:
+  name: "TaskPlannerInput"
+  description: "Input schema for task planner"
+  schema:
+    type: "object"
+    properties:
+      goal:
+        type: "string"
+        description: "High-level goal or objective to plan for"
+      constraints:
+        type: "array"
+        items:
+          type: "string"
+        description: "Constraints or limitations to consider"
+        default: []
+      resources:
+        type: "array"
+        items:
+          type: "string"
+        description: "Available resources"
+        default: []
+    required:
+      - goal
+
+# Output schema
+output_schema:
+  name: "TaskPlannerOutput"
+  description: "Output schema for task planner"
+  schema:
+    type: "object"
+    properties:
+      plan:
+        type: "object"
+        description: "Generated execution plan"
+        properties:
+          subtasks:
+            type: "array"
+            items:
+              type: "object"
+              properties:
+                id:
+                  type: "string"
+                description:
+                  type: "string"
+                dependencies:
+                  type: "array"
+                  items:
+                    type: "string"
+                estimated_effort:
+                  type: "string"
+          execution_order:
+            type: "array"
+            items:
+              type: "string"
+      reasoning:
+        type: "string"
+        description: "Explanation of the planning approach"
+    required:
+      - plan
+      - reasoning
+
+# Safety permissions
+safety_permissions:
+  internet_access: false
+  file_system_read: false
+  file_system_write: false
+  external_api_calls: false
+  data_persistence: false
+  user_interaction: false
+  sensitive_data: false
+
+# Testing
+has_tests: true
+has_golden_evals: true
