@@ -1,0 +1,146 @@
+# Test scenarios for dspy-fleet-rlm skill evaluation
+# Covers fleet-rlm-specific DSPy patterns, imports, and integration
+# Validates correct fleet_rlm module paths and conventions
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── fleet-rlm Import Conventions ──────────────────────────────────────
+
+  - name: fleet_rlm_signature_import
+    prompt: |
+      Show how to import and use a production DSPy signature from the
+      fleet-rlm codebase. Use the correct module path for fleet_rlm signatures.
+    expected_patterns:
+      - "fleet_rlm\\.signatures"
+      - "import"
+      - "dspy"
+    forbidden_patterns:
+      - "agentic_fleet"
+      - "dspy_modules"
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - fleet-rlm
+      - import
+    mock_response: |
+      import dspy
+      from fleet_rlm.signatures import AnalyzeLongDocument, CodeChangePlan
+
+      # Configure LM
+      lm = dspy.LM("openai/gpt-4o-mini")
+      dspy.configure(lm=lm)
+
+      # Use a production signature
+      analyzer = dspy.Predict(AnalyzeLongDocument)
+      result = analyzer(
+          document="Long document text here...",
+          query="Summarize the key findings"
+      )
+      print(result.findings)
+
+  - name: fleet_rlm_core_import
+    prompt: |
+      Show how to import from the fleet-rlm core module for DSPy
+      interpreter and configuration. Use the correct fleet_rlm.core paths.
+    expected_patterns:
+      - "fleet_rlm\\.core"
+      - "import"
+    forbidden_patterns:
+      - "agentic_fleet"
+      - "dspy_modules"
+    tags:
+      - fleet-rlm
+      - import
+    mock_response: |
+      from fleet_rlm.core.interpreter import Interpreter
+      from fleet_rlm.core.config import get_dspy_config
+      from fleet_rlm.core.llm_tools import get_llm_tool
+
+      # Use fleet-rlm core components
+      config = get_dspy_config()
+
+  # ── fleet-rlm Architecture Patterns ───────────────────────────────────
+
+  - name: fleet_rlm_new_signature
+    prompt: |
+      Create a new DSPy signature for the fleet-rlm codebase that analyzes
+      code quality. Follow fleet-rlm conventions: place it in the correct
+      module and use proper docstring format.
+    expected_patterns:
+      - "dspy\\.Signature"
+      - "dspy\\.InputField"
+      - "dspy\\.OutputField"
+      - "fleet_rlm"
+    forbidden_patterns:
+      - "agentic_fleet"
+      - "dspy_modules"
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - fleet-rlm
+      - signature
+    mock_response: |
+      """New signature for fleet-rlm code quality analysis.
+
+      Add to src/fleet_rlm/signatures_prod.py and re-export from signatures.py.
+      """
+      import dspy
+
+      class AnalyzeCodeQuality(dspy.Signature):
+          """Analyze code quality and suggest improvements.
+
+          Input Fields:
+              code: Source code to analyze
+              language: Programming language
+
+          Output Fields:
+              issues: List of quality issues found
+              suggestions: Improvement suggestions
+              score: Overall quality score (0-100)
+          """
+          code: str = dspy.InputField(desc="Source code to analyze")
+          language: str = dspy.InputField(desc="Programming language of the code")
+          issues: list[str] = dspy.OutputField(desc="Quality issues found")
+          suggestions: list[str] = dspy.OutputField(desc="Improvement suggestions")
+          score: int = dspy.OutputField(desc="Overall quality score from 0 to 100")
+
+      # Register in fleet_rlm/signatures.py:
+      # from .signatures_prod import AnalyzeCodeQuality
+
+  - name: fleet_rlm_no_deprecated_refs
+    prompt: |
+      Show the correct way to set up a DSPy development environment for
+      working on the fleet-rlm codebase. Include imports and configuration.
+    expected_patterns:
+      - "fleet_rlm"
+      - "dspy\\.LM"
+      - "dspy\\.configure"
+      - "uv"
+    forbidden_patterns:
+      - "agentic_fleet"
+      - "dspy_modules"
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+      - "^pip install|[^v] pip install"
+    tags:
+      - fleet-rlm
+      - setup
+    mock_response: |
+      # Environment setup
+      # uv venv && source .venv/bin/activate
+      # uv pip install dspy
+
+      import dspy
+      from fleet_rlm.signatures import AnalyzeLongDocument
+      from fleet_rlm.core.config import get_dspy_config
+
+      # Configure DSPy with modern API
+      lm = dspy.LM("openai/gpt-4o-mini")
+      dspy.configure(lm=lm)
+
+      # Use fleet-rlm signatures
+      analyzer = dspy.Predict(AnalyzeLongDocument)

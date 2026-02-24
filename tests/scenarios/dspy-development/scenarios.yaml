@@ -1,0 +1,571 @@
+# Test scenarios for dspy-development skill evaluation
+# Each scenario tests DSPy code generation against the current DSPy API (dspy.ai)
+# Validates that the skill produces code aligned with DSPy >= 2.6 conventions
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Signature Basics ──────────────────────────────────────────────────
+
+  - name: basic_signature_class
+    prompt: |
+      Create a DSPy signature class for sentiment analysis.
+      The signature should accept a sentence and produce a sentiment label
+      (positive, negative, or neutral) and a confidence score.
+      Use the modern DSPy class-based signature style with type annotations.
+    expected_patterns:
+      - "dspy\\.Signature"
+      - "dspy\\.InputField"
+      - "dspy\\.OutputField"
+      - "class\\s+\\w+\\(dspy\\.Signature\\)"
+      - ":\\s*(str|Literal)"
+      - ":\\s*float"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+      - "import openai"
+    tags:
+      - signature
+      - basic
+    mock_response: |
+      import dspy
+      from typing import Literal
+
+      class SentimentAnalysis(dspy.Signature):
+          """Classify the sentiment of a given sentence."""
+
+          sentence: str = dspy.InputField(desc="The sentence to analyze")
+          sentiment: Literal["positive", "negative", "neutral"] = dspy.OutputField(desc="Sentiment label")
+          confidence: float = dspy.OutputField(desc="Confidence score from 0.0 to 1.0")
+
+  - name: inline_string_signature
+    prompt: |
+      Show how to create a simple DSPy question-answering pipeline using
+      an inline string signature. Use dspy.Predict with the string shorthand.
+    expected_patterns:
+      - "dspy\\.Predict"
+      - "->|→"
+      - "question"
+      - "answer"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - signature
+      - inline
+    mock_response: |
+      import dspy
+
+      # Inline string signature: inputs -> outputs
+      qa = dspy.Predict("question -> answer")
+
+      # With type hints
+      qa_typed = dspy.Predict("question: str -> answer: str")
+
+      # Multiple inputs/outputs
+      rag = dspy.Predict("context: list[str], question: str -> answer: str")
+
+  - name: signature_with_type_annotations
+    prompt: |
+      Create a DSPy signature for extracting structured information from text.
+      It should extract a title, a list of headings, and a list of entities
+      with their metadata. Use proper Python type annotations on the fields.
+    expected_patterns:
+      - "dspy\\.Signature"
+      - "dspy\\.InputField"
+      - "dspy\\.OutputField"
+      - "list\\[str\\]|List\\[str\\]"
+      - "list\\[dict|List\\[dict"
+      - ":\\s*str\\s*="
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - signature
+      - typing
+    mock_response: |
+      import dspy
+
+      class ExtractInfo(dspy.Signature):
+          """Extract structured information from text."""
+
+          text: str = dspy.InputField(desc="Text to extract information from")
+          title: str = dspy.OutputField(desc="Extracted title")
+          headings: list[str] = dspy.OutputField(desc="Section headings found in the text")
+          entities: list[dict[str, str]] = dspy.OutputField(desc="A list of entities and their metadata")
+
+  # ── Module / Program Construction ─────────────────────────────────────
+
+  - name: basic_module_with_predict
+    prompt: |
+      Create a DSPy module that summarizes a document. The module should
+      inherit from dspy.Module, use dspy.Predict with a Signature, and
+      return a dspy.Prediction.
+    expected_patterns:
+      - "class\\s+\\w+\\(dspy\\.Module\\)"
+      - "super\\(\\).__init__\\(\\)"
+      - "dspy\\.Predict"
+      - "def forward\\("
+      - "dspy\\.Prediction"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+      - "\\.forward\\(.*\\)\\.output"
+    tags:
+      - module
+      - basic
+    mock_response: |
+      import dspy
+
+      class SummarizeText(dspy.Signature):
+          """Summarize the given document."""
+          document: str = dspy.InputField(desc="The document to summarize")
+          summary: str = dspy.OutputField(desc="Concise summary of the document")
+
+      class TextSummarizer(dspy.Module):
+          def __init__(self):
+              super().__init__()
+              self.summarize = dspy.Predict(SummarizeText)
+
+          def forward(self, document: str):
+              result = self.summarize(document=document)
+              return dspy.Prediction(summary=result.summary)
+
+  - name: chain_of_thought_module
+    prompt: |
+      Create a DSPy module that uses ChainOfThought for multi-step reasoning.
+      The module should analyze a task and produce a plan. Access the
+      chain-of-thought reasoning via the result's rationale attribute.
+    expected_patterns:
+      - "dspy\\.ChainOfThought"
+      - "dspy\\.Module"
+      - "def forward\\("
+      - "rationale|reasoning"
+    forbidden_patterns:
+      - "dspy\\.ChainOfThought\\(.*max_tokens"
+      - "dspy\\.ChainOfThought\\(.*temperature"
+      - "dspy\\.OpenAI"
+    tags:
+      - module
+      - chain-of-thought
+    mock_response: |
+      import dspy
+
+      class AnalyzeTask(dspy.Signature):
+          """Analyze a task and determine the best approach."""
+          task: str = dspy.InputField(desc="The task to analyze")
+          plan: str = dspy.OutputField(desc="Step-by-step plan")
+
+      class TaskPlanner(dspy.Module):
+          def __init__(self):
+              super().__init__()
+              self.analyze = dspy.ChainOfThought(AnalyzeTask)
+
+          def forward(self, task: str):
+              result = self.analyze(task=task)
+              return dspy.Prediction(
+                  plan=result.plan,
+                  reasoning=result.rationale
+              )
+
+  - name: multi_module_composition
+    prompt: |
+      Create a DSPy program that composes multiple modules: first classify
+      an input, then process it differently based on the classification.
+      Use dspy.Predict for each step and return dspy.Prediction.
+    expected_patterns:
+      - "dspy\\.Module"
+      - "dspy\\.Predict"
+      - "dspy\\.Prediction"
+      - "def forward\\("
+      - "if.*==|if.*in"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - module
+      - composition
+    mock_response: |
+      import dspy
+
+      class ClassifyInput(dspy.Signature):
+          """Classify the type of input."""
+          input_text: str = dspy.InputField(desc="Text to classify")
+          category: str = dspy.OutputField(desc="Category: 'question', 'statement', or 'command'")
+
+      class AnswerQuestion(dspy.Signature):
+          """Answer a question."""
+          question: str = dspy.InputField(desc="Question to answer")
+          answer: str = dspy.OutputField(desc="Answer to the question")
+
+      class SummarizeStatement(dspy.Signature):
+          """Summarize a statement."""
+          statement: str = dspy.InputField(desc="Statement to summarize")
+          summary: str = dspy.OutputField(desc="Summary of the statement")
+
+      class SmartProcessor(dspy.Module):
+          def __init__(self):
+              super().__init__()
+              self.classify = dspy.Predict(ClassifyInput)
+              self.answer = dspy.Predict(AnswerQuestion)
+              self.summarize = dspy.Predict(SummarizeStatement)
+
+          def forward(self, input_text: str):
+              classification = self.classify(input_text=input_text)
+
+              if classification.category == "question":
+                  result = self.answer(question=input_text)
+                  return dspy.Prediction(output=result.answer, category="question")
+              else:
+                  result = self.summarize(statement=input_text)
+                  return dspy.Prediction(output=result.summary, category="statement")
+
+  # ── LM Configuration ─────────────────────────────────────────────────
+
+  - name: configure_language_model
+    prompt: |
+      Show how to configure DSPy to use a language model. Set up the LM
+      and configure DSPy globally. Use the current recommended API.
+    expected_patterns:
+      - "dspy\\.configure"
+      - "dspy\\.LM"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+      - "dspy\\.Google"
+      - "dspy\\.Anthropic"
+    tags:
+      - configuration
+      - lm
+    mock_response: |
+      import dspy
+
+      # Configure with OpenAI model (uses litellm format)
+      lm = dspy.LM("openai/gpt-4o-mini")
+      dspy.configure(lm=lm)
+
+      # Or with specific parameters
+      lm = dspy.LM("openai/gpt-4o", temperature=0.7, max_tokens=1000)
+      dspy.configure(lm=lm)
+
+      # For Anthropic models
+      lm = dspy.LM("anthropic/claude-3-5-sonnet-20241022")
+      dspy.configure(lm=lm)
+
+  # ── Optimization / Compilation ────────────────────────────────────────
+
+  - name: bootstrap_fewshot_optimization
+    prompt: |
+      Show how to optimize a DSPy program using BootstrapFewShot.
+      Include defining a metric, creating training examples with dspy.Example,
+      compiling the program, and saving/loading the result.
+    expected_patterns:
+      - "BootstrapFewShot"
+      - "dspy\\.Example"
+      - "\\.compile\\("
+      - "metric"
+      - "trainset"
+      - "\\.save\\(|\\.load\\("
+    forbidden_patterns:
+      - "pickle\\.dump"
+      - "pickle\\.load"
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - optimization
+      - bootstrap
+    mock_response: |
+      import dspy
+      from dspy.teleprompt import BootstrapFewShot
+
+      # Configure LM
+      lm = dspy.LM("openai/gpt-4o-mini")
+      dspy.configure(lm=lm)
+
+      # Define a metric
+      def my_metric(example, pred, trace=None):
+          return example.answer == pred.answer
+
+      # Create training examples
+      trainset = [
+          dspy.Example(question="What is 2+2?", answer="4").with_inputs("question"),
+          dspy.Example(question="Capital of France?", answer="Paris").with_inputs("question"),
+      ]
+
+      # Create and compile program
+      program = dspy.ChainOfThought("question -> answer")
+
+      optimizer = BootstrapFewShot(
+          metric=my_metric,
+          max_bootstrapped_demos=4,
+          max_labeled_demos=16,
+          max_rounds=1,
+      )
+      compiled_program = optimizer.compile(program, trainset=trainset)
+
+      # Save compiled program (modern API)
+      compiled_program.save("./my_program/program.json")
+
+      # Load later
+      loaded_program = dspy.ChainOfThought("question -> answer")
+      loaded_program.load("./my_program/program.json")
+
+  - name: miprov2_optimization
+    prompt: |
+      Show how to use MIPROv2 optimizer in DSPy for instruction optimization.
+      Include the auto parameter and saving the result.
+    expected_patterns:
+      - "MIPROv2"
+      - "dspy\\.teleprompt"
+      - "\\.compile\\("
+      - "auto"
+      - "\\.save\\("
+    forbidden_patterns:
+      - "pickle\\.dump"
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - optimization
+      - mipro
+    mock_response: |
+      import dspy
+      from copy import deepcopy
+      from dspy.teleprompt import MIPROv2
+
+      lm = dspy.LM("openai/gpt-4o-mini")
+      dspy.configure(lm=lm)
+
+      program = dspy.ChainOfThought("question -> answer")
+
+      def my_metric(example, pred, trace=None):
+          return example.answer.lower() == pred.answer.lower()
+
+      optimizer = MIPROv2(
+          metric=my_metric,
+          auto="light",  # "light", "medium", or "heavy"
+      )
+
+      optimized = optimizer.compile(
+          deepcopy(program),
+          trainset=trainset,
+          max_bootstrapped_demos=3,
+          max_labeled_demos=4,
+          requires_permission_to_run=False,
+      )
+
+      optimized.save("mipro_optimized")
+
+  - name: evaluation_workflow
+    prompt: |
+      Show how to evaluate a DSPy program using the dspy.evaluate.Evaluate class.
+      Include setting up the evaluator with a dev set and metric.
+    expected_patterns:
+      - "Evaluate"
+      - "dspy\\.evaluate"
+      - "devset"
+      - "metric"
+      - "num_threads|display_progress"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - evaluation
+      - testing
+    mock_response: |
+      from dspy.evaluate import Evaluate
+
+      # Define metric
+      def accuracy_metric(example, pred, trace=None):
+          return example.answer == pred.answer
+
+      # Set up evaluator
+      evaluator = Evaluate(
+          devset=devset,
+          metric=accuracy_metric,
+          num_threads=4,
+          display_progress=True,
+          display_table=5,
+      )
+
+      # Run evaluation
+      evaluator(my_compiled_program)
+
+  # ── Save / Load ───────────────────────────────────────────────────────
+
+  - name: save_and_load_program
+    prompt: |
+      Show the recommended way to save and load a compiled DSPy program.
+      Include both JSON (preferred) and pickle options, and explain the
+      difference between state-only and full program saving.
+    expected_patterns:
+      - "\\.save\\("
+      - "\\.load\\("
+      - "\\.json"
+      - "save_program"
+    forbidden_patterns:
+      - "import pickle"
+      - "pickle\\.dump"
+      - "pickle\\.load"
+    tags:
+      - persistence
+      - save-load
+    mock_response: |
+      import dspy
+
+      # --- State-only saving (recommended) ---
+      # Save to JSON (safe, readable)
+      compiled_program.save("./my_program/program.json")
+
+      # Load state into a recreated program
+      loaded = dspy.ChainOfThought("question -> answer")
+      loaded.load("./my_program/program.json")
+
+      # Save to pickle (for non-serializable objects like dspy.Image)
+      compiled_program.save("./my_program/program.pkl")
+
+      # Load pickle (requires trust)
+      loaded_pkl = dspy.ChainOfThought("question -> answer")
+      loaded_pkl.load("./my_program/program.pkl", allow_pickle=True)
+
+      # --- Full program saving (includes architecture) ---
+      compiled_program.save("./my_program_dir/", save_program=True)
+
+      # Load full program
+      loaded_full = dspy.load("./my_program_dir/", allow_pickle=True)
+
+  # ── RAG Pattern ───────────────────────────────────────────────────────
+
+  - name: rag_module
+    prompt: |
+      Create a DSPy Retrieval-Augmented Generation (RAG) module.
+      It should retrieve relevant context and generate an answer.
+      Use dspy.Predict with a signature that includes context.
+    expected_patterns:
+      - "dspy\\.Module"
+      - "dspy\\.Predict|dspy\\.ChainOfThought"
+      - "context"
+      - "def forward\\("
+      - "dspy\\.Prediction"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - rag
+      - pattern
+    mock_response: |
+      import dspy
+
+      class GenerateAnswer(dspy.Signature):
+          """Answer a question using the provided context."""
+          context: list[str] = dspy.InputField(desc="Relevant passages")
+          question: str = dspy.InputField(desc="Question to answer")
+          answer: str = dspy.OutputField(desc="Answer based on the context")
+
+      class RAG(dspy.Module):
+          def __init__(self, num_passages=3):
+              super().__init__()
+              self.retrieve = dspy.Retrieve(k=num_passages)
+              self.generate = dspy.ChainOfThought(GenerateAnswer)
+
+          def forward(self, question: str):
+              context = self.retrieve(question).passages
+              result = self.generate(context=context, question=question)
+              return dspy.Prediction(
+                  answer=result.answer,
+                  context=context,
+              )
+
+  # ── Deprecated API Detection ──────────────────────────────────────────
+
+  - name: avoid_deprecated_openai_class
+    prompt: |
+      Configure DSPy to use GPT-4 for a question-answering task.
+      Create a simple QA pipeline and run it.
+    expected_patterns:
+      - "dspy\\.LM"
+      - "dspy\\.configure"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+      - "dspy\\.Google"
+      - "dspy\\.Anthropic"
+      - "dspy\\.HFModel"
+    tags:
+      - configuration
+      - deprecated-check
+    mock_response: |
+      import dspy
+
+      # Modern API: use dspy.LM with litellm model strings
+      lm = dspy.LM("openai/gpt-4o")
+      dspy.configure(lm=lm)
+
+      qa = dspy.Predict("question -> answer")
+      result = qa(question="What is the capital of France?")
+      print(result.answer)
+
+  - name: avoid_deprecated_pickle_save
+    prompt: |
+      After compiling a DSPy program with BootstrapFewShot, save the
+      compiled program to disk and show how to load it later.
+    expected_patterns:
+      - "\\.save\\("
+      - "\\.load\\("
+    forbidden_patterns:
+      - "import pickle"
+      - "pickle\\.dump"
+      - "pickle\\.load"
+      - "dspy\\.OpenAI"
+    tags:
+      - persistence
+      - deprecated-check
+    mock_response: |
+      # Save compiled program (modern DSPy API)
+      compiled_program.save("./compiled/program.json")
+
+      # Load later: recreate the same program structure, then load state
+      loaded = dspy.ChainOfThought("question -> answer")
+      loaded.load("./compiled/program.json")
+
+  # ── dspy.Example Usage ────────────────────────────────────────────────
+
+  - name: dspy_example_with_inputs
+    prompt: |
+      Create training examples for a DSPy optimization workflow.
+      Show how to use dspy.Example with the with_inputs method to
+      specify which fields are inputs vs labels.
+    expected_patterns:
+      - "dspy\\.Example"
+      - "\\.with_inputs\\("
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - example
+      - training-data
+    mock_response: |
+      import dspy
+
+      # Create examples and mark input fields
+      trainset = [
+          dspy.Example(
+              question="What is machine learning?",
+              answer="Machine learning is a subset of AI that enables systems to learn from data."
+          ).with_inputs("question"),
+          dspy.Example(
+              question="What is Python?",
+              answer="Python is a high-level programming language."
+          ).with_inputs("question"),
+      ]
+
+      # For multi-input signatures
+      rag_trainset = [
+          dspy.Example(
+              context=["Paris is the capital of France."],
+              question="What is the capital of France?",
+              answer="Paris",
+          ).with_inputs("context", "question"),
+      ]

@@ -1,0 +1,187 @@
+# Test scenarios for dspy-optimization skill evaluation
+# Covers optimization, metrics, evaluation, and dspy.Example usage
+# Validates DSPy >= 2.6 conventions
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Optimization / Compilation ────────────────────────────────────────
+
+  - name: bootstrap_fewshot_optimization
+    prompt: |
+      Show how to optimize a DSPy program using BootstrapFewShot.
+      Include defining a metric, creating training examples with dspy.Example,
+      compiling the program, and saving/loading the result.
+    expected_patterns:
+      - "BootstrapFewShot"
+      - "dspy\\.Example"
+      - "\\.compile\\("
+      - "metric"
+      - "trainset"
+      - "\\.save\\(|\\.load\\("
+    forbidden_patterns:
+      - "pickle\\.dump"
+      - "pickle\\.load"
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - optimization
+      - bootstrap
+    mock_response: |
+      import dspy
+      from dspy.teleprompt import BootstrapFewShot
+
+      # Configure LM
+      lm = dspy.LM("openai/gpt-4o-mini")
+      dspy.configure(lm=lm)
+
+      # Define a metric
+      def my_metric(example, pred, trace=None):
+          return example.answer == pred.answer
+
+      # Create training examples
+      trainset = [
+          dspy.Example(question="What is 2+2?", answer="4").with_inputs("question"),
+          dspy.Example(question="Capital of France?", answer="Paris").with_inputs("question"),
+      ]
+
+      # Create and compile program
+      program = dspy.ChainOfThought("question -> answer")
+
+      optimizer = BootstrapFewShot(
+          metric=my_metric,
+          max_bootstrapped_demos=4,
+          max_labeled_demos=16,
+          max_rounds=1,
+      )
+      compiled_program = optimizer.compile(program, trainset=trainset)
+
+      # Save compiled program (modern API)
+      compiled_program.save("./my_program/program.json")
+
+      # Load later
+      loaded_program = dspy.ChainOfThought("question -> answer")
+      loaded_program.load("./my_program/program.json")
+
+  - name: miprov2_optimization
+    prompt: |
+      Show how to use MIPROv2 optimizer in DSPy for instruction optimization.
+      Include the auto parameter and saving the result.
+    expected_patterns:
+      - "MIPROv2"
+      - "dspy\\.teleprompt"
+      - "\\.compile\\("
+      - "auto"
+      - "\\.save\\("
+    forbidden_patterns:
+      - "pickle\\.dump"
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - optimization
+      - mipro
+    mock_response: |
+      import dspy
+      from copy import deepcopy
+      from dspy.teleprompt import MIPROv2
+
+      lm = dspy.LM("openai/gpt-4o-mini")
+      dspy.configure(lm=lm)
+
+      program = dspy.ChainOfThought("question -> answer")
+
+      def my_metric(example, pred, trace=None):
+          return example.answer.lower() == pred.answer.lower()
+
+      optimizer = MIPROv2(
+          metric=my_metric,
+          auto="light",  # "light", "medium", or "heavy"
+      )
+
+      optimized = optimizer.compile(
+          deepcopy(program),
+          trainset=trainset,
+          max_bootstrapped_demos=3,
+          max_labeled_demos=4,
+          requires_permission_to_run=False,
+      )
+
+      optimized.save("mipro_optimized")
+
+  - name: evaluation_workflow
+    prompt: |
+      Show how to evaluate a DSPy program using the dspy.evaluate.Evaluate class.
+      Include setting up the evaluator with a dev set and metric.
+    expected_patterns:
+      - "Evaluate"
+      - "dspy\\.evaluate"
+      - "devset"
+      - "metric"
+      - "num_threads|display_progress"
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - evaluation
+      - testing
+    mock_response: |
+      from dspy.evaluate import Evaluate
+
+      # Define metric
+      def accuracy_metric(example, pred, trace=None):
+          return example.answer == pred.answer
+
+      # Set up evaluator
+      evaluator = Evaluate(
+          devset=devset,
+          metric=accuracy_metric,
+          num_threads=4,
+          display_progress=True,
+          display_table=5,
+      )
+
+      # Run evaluation
+      evaluator(my_compiled_program)
+
+  # ── dspy.Example Usage ────────────────────────────────────────────────
+
+  - name: dspy_example_with_inputs
+    prompt: |
+      Create training examples for a DSPy optimization workflow.
+      Show how to use dspy.Example with the with_inputs method to
+      specify which fields are inputs vs labels.
+    expected_patterns:
+      - "dspy\\.Example"
+      - "\\.with_inputs\\("
+    forbidden_patterns:
+      - "dspy\\.OpenAI"
+      - "dspy\\.settings\\.configure"
+    tags:
+      - example
+      - training-data
+    mock_response: |
+      import dspy
+
+      # Create examples and mark input fields
+      trainset = [
+          dspy.Example(
+              question="What is machine learning?",
+              answer="Machine learning is a subset of AI that enables systems to learn from data."
+          ).with_inputs("question"),
+          dspy.Example(
+              question="What is Python?",
+              answer="Python is a high-level programming language."
+          ).with_inputs("question"),
+      ]
+
+      # For multi-input signatures
+      rag_trainset = [
+          dspy.Example(
+              context=["Paris is the capital of France."],
+              question="What is the capital of France?",
+              answer="Paris",
+          ).with_inputs("context", "question"),
+      ]
