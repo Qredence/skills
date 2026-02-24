@@ -1,0 +1,10 @@
+{
+  "metadata": {
+    "pluginRoot": "plugins"
+  },
+  "plugins": [
+    {
+      "source": "qredence-skills"
+    }
+  ]
+}
