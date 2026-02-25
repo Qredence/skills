@@ -1,7 +1,0 @@
-{
-  "name": "Qredence Skills",
-  "description": "A centralized collection of agent skills from Qredence.",
-  "version": "1.0.0",
-  "skills": "./skills/",
-  "logo": "assets/logo.svg"
-}
