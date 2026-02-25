@@ -1,0 +1,8 @@
+{
+  "name": "Fleet Skills",
+  "description": "A centralized collection of agent skills.",
+  "version": "1.0.0",
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "logo": "assets/logo.svg"
+}

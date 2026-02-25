@@ -3,14 +3,14 @@ import sys
 from pathlib import Path
 
 
-def sync_qredence_skills():
+def sync_fleet_skills():
     """
     Ensures that every skill in the root 'skills/' directory has a corresponding
-    symlink in 'plugins/qredence-skills/skills/'. Also removes dead/orphaned symlinks.
+    symlink in 'plugins/fleet-skills/skills/'. Also removes dead/orphaned symlinks.
     """
     repo_root = Path(__file__).resolve().parent.parent
     source_skills_dir = repo_root / "skills"
-    plugin_skills_dir = repo_root / "plugins" / "qredence-skills" / "skills"
+    plugin_skills_dir = repo_root / "plugins" / "fleet-skills" / "skills"
 
     if not source_skills_dir.exists():
         print(f"Error: Source skills directory '{source_skills_dir}' does not exist.")
@@ -28,7 +28,7 @@ def sync_qredence_skills():
     # 2. Sync / Create symlinks in the plugin directory
     for skill_name in valid_skills:
         target_link = plugin_skills_dir / skill_name
-        # The target needs to point from `plugins/qredence-skills/skills/<skill>` to `../../../skills/<skill>`
+        # The target needs to point from `plugins/fleet-skills/skills/<skill>` to `../../../skills/<skill>`
         # Relative path from target link location to the actual skill directory
         relative_target = Path("..") / ".." / ".." / "skills" / skill_name
 
@@ -55,5 +55,5 @@ def sync_qredence_skills():
 
 
 if __name__ == "__main__":
-    sync_qredence_skills()
+    sync_fleet_skills()
     print("Plugin sync completed successfully.")
