@@ -33,9 +33,9 @@ def init_skill(name, path):
 
     # Sync plugins to ensure the new skill is linked properly
     try:
-        from sync_plugins import sync_qredence_skills
+        from sync_plugins import sync_fleet_skills
 
-        sync_qredence_skills()
+        sync_fleet_skills()
         print("Successfully synced plugins.")
     except Exception as e:
         print(f"Warning: Failed to sync plugins automatically: {e}")

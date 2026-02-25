@@ -50,7 +50,7 @@ scripts/                         # Repository management utilities
 └── sync_plugins.py             # Sync symlinks to plugin directories
 
 plugins/                         # Ecosystem-specific packaging (symlinks)
-└── qredence-skills/            # Main plugin package
+└── fleet-skills/             # Main plugin package
 
 .agents/                         # Sub-agent definitions (Markdown + YAML frontmatter)
 ├── sub-agents/                 # Task-specific agents
