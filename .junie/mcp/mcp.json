@@ -1,12 +1,6 @@
 {
-    "mcpServers": {
-        "Context7": {
-            "type": "com.intellij.ml.llm.matterhorn.core.mcp.McpServerConfiguration.McpServerUrl",
-            "name": "Context7",
-            "url": "https://mcp.context7.com/mcp",
-            "headers": {},
-            "sourcePath": "/Volumes/StorageBackup/_SKILLS/skills/.junie/mcp/mcp.json",
-            "enabled": true
-        }
-    }
+  "context7": {
+    "command": "npx",
+    "args": ["-y", "@upstash/context7-mcp", "--api-key", "${CONTEXT7_API_KEY}"]
+  }
 }
