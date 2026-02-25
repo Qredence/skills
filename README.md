@@ -7,14 +7,14 @@ This repository serves as a centralized collection of agent skills, designed to 
 
 ## Quick Start — Install a Skill
 
-Install any skill directly from this repository using npx:
+Install skills directly from this repository using npx:
 
 ```bash
-# Install a specific skill
-npx skills add Qredence/skills/skills/fastapi-router-py
+# Install all skills from the repository
+npx skills add Qredence/skills
 
 # Install globally
-npx skills add -g Qredence/skills/skills/fastapi-router-py
+npx skills add -g Qredence/skills
 ```
 
 ## Available Skills
