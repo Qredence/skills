@@ -1,45 +1,63 @@
-# Qredence's Collection of Agent Skills
+# Fleet Skills — Agent Skills Collection
 
 [![Python CI](https://github.com/Qredence/skills/actions/workflows/python-ci.yml/badge.svg)](https://github.com/Qredence/skills/actions/workflows/python-ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This repository serves as a centralized collection of agent skills, designed to be compatible with multiple AI agent ecosystems including Claude Code and Cursor.
 
-## Installation
+## Quick Start — Install a Skill
 
-You can install any skill from this repository using the `skills.sh` CLI. Since this is a monorepo containing multiple skills, you need to specify the path to the specific skill you want to install.
-
-For example, to install the `fastapi-router-py` skill from this repository:
+Install skills directly from this repository using npx:
 
 ```bash
-npx skills add Qredence/skills/skills/fastapi-router-py
+# Install all skills from the repository
+npx skills add Qredence/skills
+
+# Install globally
+npx skills add -g Qredence/skills
 ```
 
-Or globally:
+## Available Skills
 
-```bash
-npx skills add -g Qredence/skills/skills/fastapi-router-py
-```
+| Skill | Description |
+|-------|-------------|
+| `fastapi-router-py` | FastAPI router utilities |
+| `dspy-core` | DSPy core patterns |
+| `dspy-development` | DSPy development workflows |
+| `dspy-fleet-rlm` | DSPy fleet RLM integration |
+| `dspy-gepa` | DSPy Gepa patterns |
+| `dspy-optimization` | DSPy optimization techniques |
+| `agent-converter` | Agent format converter |
+| `babysit-pr` | PR babysitting automation |
 
 ## Repository Structure
 
-- `skills/`: The single source of truth for all raw skill definitions. Each skill is contained in its own directory.
-- `plugins/`: Ecosystem-specific packaging and symlinks.
-- `scripts/`: Management utilities for creating, validating, and packaging skills.
-- `.claude-plugin/`: Claude Code marketplace manifests.
-- `.cursor-plugin/`: Cursor marketplace manifests.
+```
+skills/                  # Single source of truth for skill definitions
+├── fastapi-router-py/  # Individual skill directories
+├── dspy-core/
+└── ...
 
-For detailed guidelines on how to contribute or create new skills, please see our [Contributing Guide](.github/CONTRIBUTING.md).
+plugins/                # Ecosystem-specific packaging
+├── fleet-skills/       # Main plugin package
+│   ├── .claude-plugin/
+│   ├── .cursor-plugin/
+│   ├── agents/         # Sub-agent definitions
+│   └── skills/         # Symlinked skills
+
+scripts/                # Management utilities
+├── init_skill.py       # Scaffold new skills
+├── package_skill.py    # Validate & package skills
+└── sync_plugins.py     # Sync to plugin directories
+```
 
 ## Creating a New Skill
-
-You can scaffold a new skill using the provided utility script. This ensures the skill follows the correct directory structure and includes the required `SKILL.md` format.
 
 ```bash
 uv run python scripts/init_skill.py <skill-name> --path skills/
 ```
 
-This will create:
+This creates:
 ```
 skills/<skill-name>/
 ├── SKILL.md
@@ -50,18 +68,12 @@ skills/<skill-name>/
 
 ## Packaging a Skill
 
-To validate a skill's structure and package it for distribution, use the packaging script:
-
 ```bash
 uv run python scripts/package_skill.py skills/<skill-name>
 ```
 
-This will generate a `<skill-name>.skill` zip archive if the skill is valid.
+Generates a `<skill-name>.skill` zip archive if valid.
 
-## Plugin Manager
+## Contributing
 
-The repository is designed to be managed by a `plugin-manager` skill, which can handle wiring marketplace manifests, setting up skill symlinks, and assigning per-plugin configurations.
-
-## Important Note for Maintainers
-
-> **Branch Protection**: Branch protection rules for the `main` branch (such as requiring pull request reviews or passing status checks) must be configured manually in the GitHub UI. They cannot be set automatically via files in this repository.
+See [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed guidelines on creating and packaging skills.
