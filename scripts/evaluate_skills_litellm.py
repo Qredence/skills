@@ -13,7 +13,6 @@ Evaluates skills by:
 import os
 import re
 import sys
-import json
 from pathlib import Path
 from typing import Any
 import yaml
