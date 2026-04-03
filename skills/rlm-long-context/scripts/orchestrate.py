@@ -147,11 +147,28 @@ def orchestrate(
 
     # Step 2: Process chunks with caching and early exit
     results = []
+    # Discover actual chunk files dynamically (filename may include content type suffix)
+    discovered_chunk_paths: dict[int, str] = {}
+    if os.path.isdir(config.chunks_dir):
+        for filename in os.listdir(config.chunks_dir):
+            if not (filename.startswith("chunk_") and filename.endswith(".txt")):
+                continue
+            chunk_stem = filename[:-4]
+            chunk_suffix = chunk_stem[len("chunk_"):]
+            chunk_idx_str = chunk_suffix.split("_", 1)[0]
+            if not chunk_idx_str.isdigit():
+                continue
+            chunk_idx = int(chunk_idx_str)
+            discovered_chunk_paths.setdefault(
+                chunk_idx, os.path.join(config.chunks_dir, filename)
+            )
+
     chunks_to_process = [
         (
             start,
-            os.path.join(
-                config.chunks_dir, f"chunk_{start // config.chunk_size:04d}.txt"
+            discovered_chunk_paths.get(
+                start // config.chunk_size,
+                os.path.join(config.chunks_dir, f"chunk_{start // config.chunk_size:04d}.txt"),
             ),
         )
         for start, _end, _score in ranked_chunks

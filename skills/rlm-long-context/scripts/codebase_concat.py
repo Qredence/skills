@@ -202,7 +202,7 @@ def main():
     args = parser.parse_args()
 
     if args.extract:
-        extract_file_from_concat(args.output, args.extract)
+        extract_file_from_concat(args.source_dir, args.extract, args.output)
     else:
         concatenate_codebase(
             args.source_dir,

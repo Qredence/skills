@@ -125,10 +125,10 @@ with open('/home/daytona/memory/artifacts/result.json', 'w') as f:
 
 ## Troubleshooting
 
-| Issue                         | Fix                                                  |
-| ----------------------------- | ---------------------------------------------------- | ------------------------------------------------ |
-| "Planner LM not configured"   | Set `DSPY_LM_MODEL` and `DSPY_LLM_API_KEY` in `.env` |
-| "Daytona sandbox failed"      | Run `env                                             | grep DAYTONA`and`uv run fleet-rlm daytona-smoke` |
-| Timeout errors                | Increase `timeout=` (Python) or `--timeout` (CLI)    |
-| Volume not persisting         | Use the same `volume_name` across sessions           |
-| `FinalOutput` attribute error | Access fields as `.field`, not `['field']`           |
+| Issue                         | Fix                                                             |
+| ----------------------------- | --------------------------------------------------------------- |
+| "Planner LM not configured"   | Set `DSPY_LM_MODEL` and `DSPY_LLM_API_KEY` in `.env`            |
+| "Daytona sandbox failed"      | Run `env \| grep DAYTONA` and `uv run fleet-rlm daytona-smoke` |
+| Timeout errors                | Increase `timeout=` (Python) or `--timeout` (CLI)               |
+| Volume not persisting         | Use the same `volume_name` across sessions                      |
+| `FinalOutput` attribute error | Access fields as `.field`, not `['field']`                      |

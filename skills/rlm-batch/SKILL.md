@@ -102,7 +102,7 @@ def process_chunk(chunk_id, data):
         f"data = {repr(data)}\n"
         f"processed = [x * 2 for x in data]\n"
         f"os.makedirs('/home/daytona/memory/artifacts', exist_ok=True)\n"
-        f"with open(f'/home/daytona/memory/artifacts/chunk_{chunk_id}.json', 'w') as f:"
+        f"with open(f'/home/daytona/memory/artifacts/chunk_{chunk_id}.json', 'w') as f:\n"
         f"    json.dump(processed, f)\n"
         f"SUBMIT(chunk_id={chunk_id}, count=len(processed))"
     )

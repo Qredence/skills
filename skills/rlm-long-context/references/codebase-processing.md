@@ -18,18 +18,18 @@ For analyzing entire codebases (multiple files), use the concatenation approach.
 
 ```bash
 # Concatenate all source files into single processable file
-python3 .skills/rlm-long-context/scripts/codebase_concat.py \
+python3 scripts/codebase_concat.py \
     /path/to/your/project \
     -o codebase.txt
 
 # Include only specific file types
-python3 .skills/rlm-long-context/scripts/codebase_concat.py \
+python3 scripts/codebase_concat.py \
     /path/to/your/project \
     -o codebase.txt \
     -i '*.py' '*.md' '*.yaml'
 
 # Exclude specific directories
-python3 .skills/rlm-long-context/scripts/codebase_concat.py \
+python3 scripts/codebase_concat.py \
     /path/to/your/project \
     -o codebase.txt \
     --exclude-dirs node_modules vendor .git
@@ -38,9 +38,15 @@ python3 .skills/rlm-long-context/scripts/codebase_concat.py \
 **Output Format:**
 
 ```
-======== FILE: src/main.py ========
+============================================================
+FILE: src/main.py
+============================================================
+
 <content of main.py>
-======== END FILE: src/main.py ========
+
+============================================================
+END FILE: src/main.py
+============================================================
 ```
 
 ---
@@ -48,9 +54,9 @@ python3 .skills/rlm-long-context/scripts/codebase_concat.py \
 ## Process with RLM
 
 ```bash
-python3 .skills/rlm-long-context/scripts/rlm_repl.py init codebase.txt
+python3 scripts/rlm_repl.py init codebase.txt
 
-python3 .skills/rlm-long-context/scripts/rlm_repl.py exec -c "
+python3 scripts/rlm_repl.py exec -c "
 import re
 files = re.findall(r'FILE: (.+)', content)
 print(f'Total files: {len(files)}')
@@ -65,7 +71,7 @@ print(f'First 10 files: {files[:10]}')
 Read [`scripts/semantic_chunk.py`](../scripts/semantic_chunk.py) with `--type python` (or appropriate language).
 
 ```bash
-python3 .skills/rlm-long-context/scripts/semantic_chunk.py \
+python3 scripts/semantic_chunk.py \
     --type python \
     --state .claude/rlm_state/state.pkl
 ```
@@ -73,7 +79,7 @@ python3 .skills/rlm-long-context/scripts/semantic_chunk.py \
 Manual REPL approach:
 
 ```bash
-python3 .skills/rlm-long-context/scripts/rlm_repl.py exec <<'PY'
+python3 scripts/rlm_repl.py exec <<'PY'
 import re, os
 
 file_pattern = r'={60}\nFILE: (.+?)\n={60}\n(.*?)\n={60}\nEND FILE'
@@ -101,7 +107,7 @@ PY
 For targeted queries, find relevant files first:
 
 ```bash
-python3 .skills/rlm-long-context/scripts/rlm_repl.py exec <<'PY'
+python3 scripts/rlm_repl.py exec <<'PY'
 import re
 
 keywords = ['auth', 'login', 'password']
@@ -156,7 +162,7 @@ input:
 ## Extracting Specific Files
 
 ```bash
-python3 .skills/rlm-long-context/scripts/codebase_concat.py \
+python3 scripts/codebase_concat.py \
     codebase.txt \
     --extract src/auth.py \
     -o auth_backup.py

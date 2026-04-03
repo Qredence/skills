@@ -49,16 +49,16 @@ Main Agent (Orchestrator)
 
 ```bash
 # Rank chunks by query relevance (skip irrelevant ones)
-python3 src/fleet_rlm/scaffold/skills/rlm-long-context/scripts/rank_chunks.py \
+python3 scripts/rank_chunks.py \
   --query "find all timeout errors" --top-k 10
 
 # Chunk by semantic boundaries (auto-detects content type)
-python3 src/fleet_rlm/scaffold/skills/rlm-long-context/scripts/semantic_chunk.py \
+python3 scripts/semantic_chunk.py \
   --state .claude/rlm_state/state.pkl
 
 # For codebases: concatenate files first
-python3 src/fleet_rlm/scaffold/skills/rlm-long-context/scripts/codebase_concat.py \
-  --root ./src --output codebase.txt
+python3 scripts/codebase_concat.py ./src \
+  -o codebase.txt
 ```
 
 ### 2. Choose Chunking Strategy

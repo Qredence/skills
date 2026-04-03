@@ -243,6 +243,10 @@ def chunk_by_size(
     start_offset: int = 0,
 ) -> list[tuple[int, int, str]]:
     """Simple size-based chunking."""
+    if overlap < 0 or overlap >= size:
+        raise ValueError(
+            f"overlap must be in range [0, size): got overlap={overlap}, size={size}"
+        )
     chunks = []
     step = size - overlap
 
@@ -319,6 +323,13 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Validate overlap
+    if args.overlap < 0 or args.overlap >= args.max_size:
+        parser.error(
+            f"--overlap must be in range [0, --max-size): "
+            f"got overlap={args.overlap}, max-size={args.max_size}"
+        )
 
     # Load content
     with open(args.state, encoding="utf-8") as f:

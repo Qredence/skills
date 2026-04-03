@@ -7,6 +7,7 @@ Ranks chunks by relevance to a query before processing.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 
 
@@ -177,7 +178,14 @@ def main():
     chunk_files = []
     for rank, (start, end, score) in enumerate(ranked, 1):
         chunk_idx = start // args.chunk_size
+        # Discover actual chunk file dynamically (filename may include content type suffix)
         chunk_file = f"{args.chunks_dir}/chunk_{chunk_idx:04d}.txt"
+        if os.path.isdir(args.chunks_dir):
+            for filename in os.listdir(args.chunks_dir):
+                stem = filename[:-4] if filename.endswith(".txt") else None
+                if stem and stem.startswith(f"chunk_{chunk_idx:04d}"):
+                    chunk_file = os.path.join(args.chunks_dir, filename)
+                    break
         chunk_files.append(chunk_file)
         print(f"{rank:<6} {chunk_idx:<10} {score:.2f}       {start:,}-{end:,}")
 

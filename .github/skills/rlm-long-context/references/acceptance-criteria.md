@@ -19,7 +19,7 @@ python3 scripts/rank_chunks.py --query "find all timeout errors" --top-k 10
 python3 scripts/semantic_chunk.py --state .claude/rlm_state/state.pkl
 
 # Codebase concatenation
-python3 scripts/codebase_concat.py --root ./src --output codebase.txt
+python3 scripts/codebase_concat.py ./src --output codebase.txt
 ```
 
 ### ❌ Incorrect — fixed-size without overlap for structured data

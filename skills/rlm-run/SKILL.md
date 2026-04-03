@@ -40,6 +40,7 @@ interpreter = DaytonaInterpreter(
     volume_name="my-project",
     timeout=120,
 )
+interpreter.start()  # Must start before first RLM call
 rlm = dspy.RLM(
     signature="question -> answer, confidence",
     interpreter=interpreter,
