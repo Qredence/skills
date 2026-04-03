@@ -11,11 +11,11 @@ import re
 
 
 def load_context(state_path: str) -> str:
-    """Load context from RLM state file (pickle format)."""
-    import pickle
+    """Load context from RLM state file (JSON format)."""
+    import json as _json
 
-    with open(state_path, "rb") as f:
-        state = pickle.load(f)
+    with open(state_path, encoding="utf-8") as f:
+        state = _json.load(f)
     return state.get("content", "")
 
 

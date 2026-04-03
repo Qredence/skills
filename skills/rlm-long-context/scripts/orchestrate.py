@@ -10,7 +10,6 @@ import argparse
 import importlib
 import json
 import os
-import pickle
 
 
 def _load_helpers():
@@ -68,8 +67,9 @@ class RLMConfig:
 
 def load_content(state_path: str) -> str:
     """Load content from RLM state."""
-    with open(state_path, "rb") as f:
-        state = pickle.load(f)
+    import json as _json
+    with open(state_path, encoding="utf-8") as f:
+        state = _json.load(f)
     return state.get("content", "")
 
 
@@ -203,7 +203,7 @@ def orchestrate(
     # Show cache stats
     if config.enable_cache:
         cache_count = (
-            len([f for f in os.listdir(config.cache_dir) if f.endswith(".json")])
+            sum(1 for e in os.scandir(config.cache_dir) if e.name.endswith(".json"))
             if os.path.exists(config.cache_dir)
             else 0
         )

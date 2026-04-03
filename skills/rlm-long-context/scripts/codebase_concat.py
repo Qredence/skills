@@ -3,6 +3,7 @@
 
 import argparse
 import os
+import re
 from pathlib import Path
 
 
@@ -155,17 +156,19 @@ def extract_file_from_concat(concat_file, target_path, output_file=None):
     if output_file is None:
         output_file = target_path.replace("/", "_")
 
-    with open(concat_file) as f:
+    with open(concat_file, encoding="utf-8") as f:
         content = f.read()
 
-    # Find the file section
-    pattern = f"======== FILE: {target_path} ========\n(.*?)======== END FILE"
-    import re
+    # Pattern matches the format written by concatenate_codebase:
+    # ============================================================
+    # FILE: <path>
+    # ============================================================
+    pattern = rf"={{{60}}}\nFILE: {re.escape(target_path)}\n={{{60}}}\n\n(.*?)\n\n={{{60}}}\nEND FILE: {re.escape(target_path)}"
 
     match = re.search(pattern, content, re.DOTALL)
 
     if match:
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write(match.group(1))
         print(f"Extracted: {target_path} -> {output_file}")
         return True

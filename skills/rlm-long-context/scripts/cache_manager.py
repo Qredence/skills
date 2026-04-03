@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import os
+from pathlib import Path
 
 
 def get_cache_key(chunk_path: str, query: str) -> str:
@@ -111,7 +112,7 @@ def invalidate_cache(cache_dir: str, pattern: str | None = None) -> int:
                 if pattern not in data.get("query", ""):
                     continue
 
-        os.remove(filepath)
+        Path(filepath).unlink(missing_ok=True)
         count += 1
 
     return count

@@ -9,8 +9,8 @@ instead of fixed character counts.
 from __future__ import annotations
 
 import argparse
+import json as _json
 import os
-import pickle
 import re
 
 
@@ -321,8 +321,8 @@ def main():
     args = parser.parse_args()
 
     # Load content
-    with open(args.state, "rb") as f:
-        state = pickle.load(f)
+    with open(args.state, encoding="utf-8") as f:
+        state = _json.load(f)
     content = state.get("content", "")
 
     # Detect content type
