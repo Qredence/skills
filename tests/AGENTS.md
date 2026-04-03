@@ -4,18 +4,30 @@ This folder contains a test harness for evaluating AI-generated code against acc
 
 ## Quick Context
 
-**What we're testing:** Skills in `.github/skills/` that provide domain knowledge for Azure SDKs.
+**What we're testing:** Skills in `.github/skills/` that provide domain knowledge for Azure SDKs and fleet-rlm.
 
 **How it works:**
 1. Each skill has **acceptance criteria** (correct/incorrect code patterns)
 2. Test **scenarios** prompt code generation and validate the output
 3. The harness runs scenarios using the [GitHub Copilot SDK](https://github.com/github/copilot-sdk) and scores generated code against criteria
+4. For real-LLM evaluation without the Copilot SDK, use `scripts/evaluate_skills_litellm.py`
 
 ## Current State
 
-| Skill | Criteria | Scenarios | Status |
-|-------|----------|-----------|--------|
-| `azure-ai-projects-py` | Complete | Complete | Passing |
+| Skill | Criteria | Scenarios | Real-LLM Pass Rate |
+|-------|----------|-----------|-----------|
+| `dspy-core` | Complete | 11 scenarios | 100% (mock) |
+| `dspy-development` | Complete | 15 scenarios | 100% (mock) |
+| `dspy-fleet-rlm` | Complete | 4 scenarios | 100% (mock) |
+| `dspy-optimization` | Complete | 4 scenarios | 100% (mock) |
+| `rlm` | Complete | 7 scenarios | 100% |
+| `rlm-batch` | Complete | 6 scenarios | 100% |
+| `rlm-debug` | Complete | 7 scenarios | 71.4% |
+| `rlm-execute` | Complete | 6 scenarios | 100% |
+| `rlm-long-context` | Complete | 7 scenarios | 71.4% |
+| `rlm-memory` | Complete | 7 scenarios | 100% |
+| `rlm-run` | Complete | 7 scenarios | 100% |
+| `rlm-test-suite` | Complete | 8 scenarios | 100% |
 
 Run `pnpm harness --list` from the `tests/` directory to see all skills with criteria.
 
@@ -216,12 +228,18 @@ pnpm typecheck
 
 Priority skills without test coverage (check with `--list`):
 
-1. `azure-cosmos-db-py` — Cosmos DB patterns
-2. `azure-search-documents-py` — Vector search, hybrid search
-3. `azure-identity-py` — Authentication patterns
-4. `azure-ai-voicelive-py` — Real-time voice AI
+1. `fastapi-router-py` — FastAPI router and dependency injection patterns
+2. `dspy-signature` — DSPy signature design patterns
+3. `dspy-gepa` — DSPy Gepa patterns
+4. `agent-converter` — Agent format conversion patterns
 
-For each, follow the 3-step process above.
+For each, follow the 3-step process above. After creating files, validate with the
+real-LLM evaluator to confirm ≥70% pass rate:
+
+```bash
+LITELLM_API_KEY="..." LITELLM_DEFAULT_MODEL="glm-5-maas" \
+uv run python scripts/evaluate_skills_litellm.py <skill-name>
+```
 
 ---
 

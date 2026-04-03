@@ -27,8 +27,17 @@ npx skills add -g Qredence/skills
 | `dspy-fleet-rlm` | DSPy fleet RLM integration |
 | `dspy-gepa` | DSPy Gepa patterns |
 | `dspy-optimization` | DSPy optimization techniques |
+| `dspy-signature` | DSPy signature design |
 | `agent-converter` | Agent format converter |
 | `babysit-pr` | PR babysitting automation |
+| `rlm` | fleet-rlm / daytona_pilot runtime model |
+| `rlm-batch` | Batched and parallel RLM execution |
+| `rlm-debug` | fleet-rlm runtime diagnostics |
+| `rlm-execute` | Daytona sandbox execution with persistence |
+| `rlm-long-context` | Long-context RLM processing (experimental) |
+| `rlm-memory` | Daytona durable volume memory patterns |
+| `rlm-run` | fleet-rlm entrypoint selection |
+| `rlm-test-suite` | fleet-rlm test lane guidance |
 
 ## Repository Structure
 
@@ -46,9 +55,17 @@ plugins/                # Ecosystem-specific packaging
 │   └── skills/         # Symlinked skills
 
 scripts/                # Management utilities
-├── init_skill.py       # Scaffold new skills
-├── package_skill.py    # Validate & package skills
-└── sync_plugins.py     # Sync to plugin directories
+├── init_skill.py               # Scaffold new skills
+├── package_skill.py            # Validate & package skills
+├── sync_plugins.py             # Sync to plugin directories
+└── evaluate_skills_litellm.py  # Real-LLM skill evaluator (LiteLLM proxy)
+
+tests/                  # Skill evaluation harness (pnpm)
+├── harness/            # TypeScript evaluator framework
+├── scenarios/          # Scenario YAML files per skill (51 RLM scenarios)
+└── AGENTS.md           # Testing agent instructions
+
+.github/skills/         # Acceptance criteria per skill
 ```
 
 ## Creating a New Skill
