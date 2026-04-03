@@ -1,0 +1,224 @@
+# Test scenarios for rlm-execute skill evaluation
+# Covers DaytonaInterpreter lifecycle, SUBMIT patterns, result dot notation,
+# durable volume persistence, buffer usage, and multi-step pipelines.
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Basic Execution ───────────────────────────────────────────────────
+
+  - name: basic_execute_with_submit
+    prompt: |
+      Show how to execute Python code in a Daytona sandbox and return a
+      structured result. Use SUBMIT to return a computed value. Access all
+      results via dot notation only.
+    expected_patterns:
+      - "configure_planner_from_env"
+      - "DaytonaInterpreter"
+      - "from.*DaytonaInterpreter|import.*DaytonaInterpreter"
+      - "\\w+\\.start\\(\\)"
+      - "SUBMIT"
+      - "result\\.\\w+"
+      - "finally"
+      - "\\w+\\.shutdown\\(\\)"
+    forbidden_patterns: []
+    tags:
+      - execute
+      - basic
+    mock_response: |
+      from fleet_rlm.runtime.config import configure_planner_from_env
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      configure_planner_from_env()
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          timeout=600,
+      )
+      interp.start()
+      try:
+          result = interp.execute('''
+      import math
+      SUBMIT(answer=math.factorial(15))
+      ''')
+          print(result.answer)  # 1307674368000
+      finally:
+          interp.shutdown()
+
+  # ── Durable Volume Write/Read ─────────────────────────────────────────
+
+  - name: volume_write_read_persistence
+    prompt: |
+      Show how to write data to the Daytona durable volume and read it back
+      in a subsequent execution call. Data should persist across sessions.
+    expected_patterns:
+      - "volume_name\\s*="
+      - "/home/daytona/memory/artifacts"
+      - "json\\.dump"
+      - "json\\.load"
+      - "SUBMIT"
+      - "finally"
+    forbidden_patterns:
+      - "/tmp/"
+    tags:
+      - execute
+      - volume
+    mock_response: |
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          volume_name="my-data",
+          timeout=600,
+      )
+      interp.start()
+      try:
+          interp.execute('''
+      import json, os
+      os.makedirs('/home/daytona/memory/artifacts', exist_ok=True)
+      data = {"processed": True, "count": 42}
+      with open('/home/daytona/memory/artifacts/results.json', 'w') as f:
+          json.dump(data, f)
+      SUBMIT(status="saved")
+      ''')
+          result = interp.execute('''
+      import json
+      with open('/home/daytona/memory/artifacts/results.json') as f:
+          data = json.load(f)
+      SUBMIT(data=data)
+      ''')
+          print(result.data)  # {"processed": True, "count": 42}
+      finally:
+          interp.shutdown()
+
+  # ── Result Dot Notation ───────────────────────────────────────────────
+
+  - name: result_access_dot_notation
+    prompt: |
+      What is the correct way to access multiple fields from a SUBMIT call?
+      Show only the correct pattern using dot notation.
+    expected_patterns:
+      - "SUBMIT"
+      - "result\\.\\w+"
+    forbidden_patterns: []
+    tags:
+      - execute
+      - result-access
+    mock_response: |
+      result = interp.execute("SUBMIT(answer=42, items=['a', 'b'], status='ok')")
+
+      # Correct: dot notation access on FinalOutput
+      print(result.answer)   # 42
+      print(result.items)    # ['a', 'b']
+      print(result.status)   # 'ok'
+
+  # ── Buffer Usage ──────────────────────────────────────────────────────
+
+  - name: add_get_buffer
+    prompt: |
+      Show how to use add_buffer and get_buffer to accumulate findings
+      across multiple execute() calls within the same sandbox session.
+    expected_patterns:
+      - "add_buffer"
+      - "get_buffer"
+      - "SUBMIT"
+      - "result\\.\\w+"
+    forbidden_patterns:
+      - "(?m)^[^#\\n]*result\\[\"\\w+\"\\]"
+    tags:
+      - execute
+      - buffers
+    mock_response: |
+      interp.start()
+      try:
+          interp.execute('add_buffer("findings", "Step 1: setup complete")')
+          interp.execute('add_buffer("findings", "Step 2: data loaded")')
+          result = interp.execute('''
+      items = get_buffer("findings")
+      SUBMIT(log=items)
+      ''')
+          print(result.log)  # ["Step 1: setup complete", "Step 2: data loaded"]
+      finally:
+          interp.shutdown()
+
+  # ── Multi-Step Pipeline ───────────────────────────────────────────────
+
+  - name: multi_step_pipeline
+    prompt: |
+      Show a data processing pipeline that generates data in step 1, persists
+      it to the durable volume using /home/daytona/memory/buffers/ for
+      intermediate pipeline results, then processes it in step 2 within the
+      same sandbox session.
+    expected_patterns:
+      - "DaytonaInterpreter"
+      - "volume_name\\s*="
+      - "/home/daytona/memory/buffers"
+      - "json\\.dump|json\\.load"
+      - "SUBMIT"
+      - "finally"
+    forbidden_patterns:
+      - "open\\('/tmp/"
+      - "makedirs\\('/tmp"
+    mock_response: |
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          volume_name="pipeline",
+          timeout=600,
+      )
+      interp.start()
+      try:
+          interp.execute('''
+      import json, os
+      os.makedirs('/home/daytona/memory/buffers', exist_ok=True)
+      data = [{"id": i, "value": i**2} for i in range(100)]
+      with open('/home/daytona/memory/buffers/raw.json', 'w') as f:
+          json.dump(data, f)
+      SUBMIT(count=len(data))
+      ''')
+          result = interp.execute('''
+      import json
+      with open('/home/daytona/memory/buffers/raw.json') as f:
+          data = json.load(f)
+      filtered = [d for d in data if d["value"] > 50]
+      SUBMIT(filtered_count=len(filtered))
+      ''')
+          print(result.filtered_count)
+      finally:
+          interp.shutdown()
+
+  # ── Execute Local File ─────────────────────────────────────────────────
+
+  - name: execute_local_file
+    prompt: |
+      How do I load a local Python script and execute it inside the Daytona
+      sandbox?
+    expected_patterns:
+      - "open.*\\.py|\\.read\\(\\)|read_text"
+      - "\\w+\\.execute"
+      - "\\w+\\.start\\(\\)"
+      - "finally"
+    forbidden_patterns:
+      - "(?m)^[^#\\n]*result\\[\"\\w+\"\\]"
+    tags:
+      - execute
+      - file
+    mock_response: |
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      code = open("scripts/analysis.py").read()
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          timeout=300,
+      )
+      interp.start()
+      try:
+          result = interp.execute(code)
+          print(result.answer)
+      finally:
+          interp.shutdown()
