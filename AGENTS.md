@@ -29,9 +29,17 @@ uv run python scripts/sync_plugins.py                        # Sync plugins
 
 # Testing (from tests/ directory)
 cd tests && pnpm install        # Install test dependencies
-pnpm harness --list             # List available skills
+pnpm harness --list             # List available skills (12 with full coverage)
 pnpm harness <skill> --mock     # Run tests in mock mode
-pnpm test                       # Run all tests
+pnpm harness <skill> --verbose  # Run with real LLM (requires GH_TOKEN)
+pnpm test                       # Run all unit tests
+
+# Real-LLM Evaluation (LiteLLM proxy)
+LITELLM_API_KEY="..." \
+LITELLM_PROXY_URL="https://litellm-proxy-gojcb5mtua-uc.a.run.app" \
+LITELLM_DEFAULT_MODEL="glm-5-maas" \
+uv run python scripts/evaluate_skills_litellm.py              # All RLM skills
+uv run python scripts/evaluate_skills_litellm.py rlm rlm-run # Specific skills
 ```
 
 ## Directory Structure
@@ -47,7 +55,8 @@ skills/                          # Single source of truth for skill definitions
 scripts/                         # Repository management utilities
 ├── init_skill.py               # Scaffold new skills
 ├── package_skill.py            # Validate and package skills
-└── sync_plugins.py             # Sync symlinks to plugin directories
+├── sync_plugins.py             # Sync symlinks to plugin directories
+└── evaluate_skills_litellm.py  # Real-LLM evaluator via LiteLLM proxy
 
 plugins/                         # Ecosystem-specific packaging (symlinks)
 └── fleet-skills/             # Main plugin package
@@ -282,7 +291,23 @@ uv run python scripts/package_skill.py skills/my-new-skill
 
 1. Create acceptance criteria: `.github/skills/<name>/references/acceptance-criteria.md`
 2. Create scenarios: `tests/scenarios/<name>/scenarios.yaml`
-3. Verify: `cd tests && pnpm harness <name> --mock --verbose`
+3. Verify mock mode: `cd tests && pnpm harness <name> --mock --verbose`
+4. Run real-LLM evaluation to confirm quality:
+   ```bash
+   LITELLM_API_KEY="..." LITELLM_DEFAULT_MODEL="glm-5-maas" \
+   uv run python scripts/evaluate_skills_litellm.py <name>
+   ```
+5. Target: ≥70% pass rate and ≥85 average score against a real LLM
+
+### Skills With Full Evaluation Coverage
+
+The following skills have acceptance criteria + scenario files and have been
+validated against a real LLM (all ≥70% pass rate):
+
+**DSPy:** `dspy-core`, `dspy-development`, `dspy-fleet-rlm`, `dspy-optimization`
+
+**RLM:** `rlm`, `rlm-batch`, `rlm-debug`, `rlm-execute`, `rlm-long-context`,
+`rlm-memory`, `rlm-run`, `rlm-test-suite`
 
 ### Convert Agents to TOML (for Codex)
 

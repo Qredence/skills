@@ -1,0 +1,193 @@
+# Test scenarios for rlm-debug skill evaluation
+# Covers smoke tests, env checks, DAYTONA_TARGET misuse, durable volume paths,
+# sandbox_output vs canonical stream, and contract debugging.
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Smoke Test First ──────────────────────────────────────────────────
+
+  - name: daytona_smoke_before_debug
+    prompt: |
+      The DaytonaInterpreter is failing to connect. What should I check first
+      before diving into the code?
+    expected_patterns:
+      - "daytona-smoke"
+      - "env.*DAYTONA|DAYTONA.*env"
+    forbidden_patterns:
+      - "DAYTONA_TARGET.*volume|volume.*DAYTONA_TARGET"
+    tags:
+      - debug
+      - smoke-test
+    mock_response: |
+      # Step 1: Check Daytona environment variables
+      env | grep DAYTONA
+
+      # Step 2: Run smoke test to validate Daytona readiness
+      uv run fleet-rlm daytona-smoke --repo <url> [--ref <branch>]
+
+      # Step 3: Check Daytona CLI version
+      daytona version
+
+      # Only proceed to code investigation if environment checks pass.
+
+  # ── DAYTONA_TARGET Misuse ─────────────────────────────────────────────
+
+  - name: daytona_target_not_a_volume
+    prompt: |
+      How do I specify the Daytona volume to use for persistent storage?
+      Can I use DAYTONA_TARGET as the volume identifier?
+    expected_patterns:
+      - "volume_name\\s*="
+      - "DAYTONA_TARGET"
+    forbidden_patterns:
+      - "DAYTONA_TARGET.*workspace.id|workspace.id.*DAYTONA_TARGET"
+    tags:
+      - debug
+      - daytona-target
+    mock_response: |
+      # DAYTONA_TARGET is a target profile name — NOT a workspace ID or volume name.
+      # Use the volume_name parameter on DaytonaInterpreter for persistent storage:
+
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          volume_name="my-durable-volume",  # <-- this is the volume identifier
+          timeout=300,
+      )
+      # DAYTONA_TARGET controls which target profile to use, not the volume.
+
+  # ── Durable Storage Paths ─────────────────────────────────────────────
+
+  - name: durable_storage_inspection
+    prompt: |
+      I think my sandbox results are not persisting. How do I inspect the
+      Daytona durable storage to verify what's there?
+    expected_patterns:
+      - "/home/daytona/memory"
+      - "memory.*artifacts.*buffers.*meta|artifacts.*buffers|memory/artifacts"
+    forbidden_patterns:
+      - "/workspace/memory"
+      - "/tmp/memory"
+    tags:
+      - debug
+      - volume
+    mock_response: |
+      # Durable storage lives at /home/daytona/memory/{memory,artifacts,buffers,meta}
+      # The live workspace is transient — only /home/daytona/memory/ persists.
+
+      result = interp.execute("""
+      import os
+      for d in ['memory', 'artifacts', 'buffers', 'meta']:
+          path = f'/home/daytona/memory/{d}'
+          exists = os.path.exists(path)
+          files = os.listdir(path) if exists else []
+          print(f'{d}: exists={exists}, files={files}')
+      SUBMIT(checked=True)
+      """)
+
+  # ── sandbox_output vs Canonical Stream ───────────────────────────────
+
+  - name: sandbox_output_vs_canonical_stream
+    prompt: |
+      My frontend is not receiving the correct execution results. I'm reading
+      from sandbox_output frames. Is that the right approach?
+    expected_patterns:
+      - "sandbox_output.*transcript|sandbox_output.*debug|transcript.*debug"
+      - "/api/v1/ws/execution"
+    forbidden_patterns: []
+    tags:
+      - debug
+      - streaming
+    mock_response: |
+      # sandbox_output frames are transcript/debug traces — NOT the canonical stream.
+      # The canonical workbench stream is /api/v1/ws/execution.
+
+      # Wrong:
+      # for frame in ws_frames:
+      #     if frame["type"] == "sandbox_output":
+      #         parse_result(frame["data"])  # incorrect
+
+      # Correct: consume from /api/v1/ws/execution for workbench output.
+      # sandbox_output is useful for debugging but not the canonical data path.
+
+  # ── Runtime Mode Mismatch ─────────────────────────────────────────────
+
+  - name: runtime_mode_mismatch
+    prompt: |
+      The fleet-rlm server returns an error about runtime_mode not being
+      ready. How do I diagnose this?
+    expected_patterns:
+      - "runtime_mode"
+      - "stream\\.py|turn_lifecycle\\.py|commands\\.py"
+    forbidden_patterns: []
+    tags:
+      - debug
+      - runtime-mode
+    mock_response: |
+      # Runtime mode mismatch: the requested runtime_mode doesn't match backend readiness state.
+      # Trace runtime_mode through:
+      #   1. The initial websocket request payload
+      #   2. src/fleet_rlm/api/routers/ws/stream.py (live chat loop)
+      #   3. src/fleet_rlm/api/routers/ws/turn_lifecycle.py (run/turn lifecycle state)
+      #   4. src/fleet_rlm/api/routers/ws/commands.py (command dispatch)
+
+      # Check the diagnostics endpoint:
+      # GET /api/v1/runtime/diagnostics
+
+  # ── UI Contract Drift ─────────────────────────────────────────────────
+
+  - name: api_contract_drift
+    prompt: |
+      After a backend refactor, the frontend stopped working. The shapes of
+      requests/responses seem mismatched. How do I diagnose this?
+    expected_patterns:
+      - "openapi\\.yaml"
+      - "/api/v1/ws/execution|/api/v1/ws/chat|/api/v1/runtime"
+    forbidden_patterns: []
+    tags:
+      - debug
+      - contract
+    mock_response: |
+      # UI contract drift: backend shapes changed but openapi.yaml was not updated.
+
+      # Check the riskiest backend files:
+      # - src/fleet_rlm/api/routers/ws/stream.py
+      # - src/fleet_rlm/api/routers/ws/commands.py
+      # - src/fleet_rlm/api/routers/ws/turn_lifecycle.py
+
+      # Key contract surfaces:
+      # openapi.yaml
+      # /api/v1/runtime/*
+      # /api/v1/ws/chat
+      # /api/v1/ws/execution
+
+      # Fix: update openapi.yaml to reflect current backend shapes,
+      # then re-run frontend API sync checks.
+
+  # ── Delegation to rlm-specialist ─────────────────────────────────────
+
+  - name: delegate_to_specialist
+    prompt: |
+      I'm hitting a complex cross-runtime failure that spans multiple
+      components. What's the right agent to handle this?
+    expected_patterns:
+      - "rlm-specialist"
+      - "daytona-runtime|rlm-debug"
+    forbidden_patterns: []
+    tags:
+      - debug
+      - delegation
+    mock_response: |
+      # For cross-runtime debugging and architecture fixes → use rlm-specialist
+      # For Daytona-specific volume and execution debugging → use daytona-runtime
+      # For initial diagnosis of runtime failures → start with rlm-debug
+
+      # Routing guide:
+      # - Cross-runtime / architecture fix → rlm-specialist
+      # - Daytona volume / session issues  → daytona-runtime
+      # - Runtime mode mismatch diagnosis  → rlm-debug → rlm-specialist

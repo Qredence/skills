@@ -1,0 +1,207 @@
+# Test scenarios for rlm-test-suite skill evaluation
+# Covers test runner (uv run pytest), make targets, specific test file lists,
+# Daytona and WS test lanes, unit test patterns, and smallest-lane principle.
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Make Targets ──────────────────────────────────────────────────────
+
+  - name: fast_confidence_lane
+    prompt: |
+      I made a small change and want the fastest feedback. What test command
+      should I run?
+    expected_patterns:
+      - "make test-fast"
+    forbidden_patterns:
+      - "pytest tests/$"
+      - "uv run pytest tests/$"
+      - "python -m pytest"
+    tags:
+      - test-suite
+      - fast
+    mock_response: |
+      # For fast confidence after a small change:
+      make test-fast
+
+      # For shared contract confidence before merging:
+      make quality-gate
+
+  - name: quality_gate_lane
+    prompt: |
+      Before merging my PR, which test command gives me shared contract
+      confidence?
+    expected_patterns:
+      - "make quality-gate"
+    forbidden_patterns:
+      - "pytest tests/$"
+      - "python -m pytest"
+    tags:
+      - test-suite
+      - quality-gate
+    mock_response: |
+      # Shared contract confidence before merging:
+      make quality-gate
+
+      # This runs broader contract checks than make test-fast.
+
+  # ── Test Runner ───────────────────────────────────────────────────────
+
+  - name: correct_test_runner
+    prompt: |
+      Show the correct command to run fleet-rlm tests. Do NOT show incorrect
+      examples.
+    expected_patterns:
+      - "uv run pytest"
+    forbidden_patterns:
+      - "(?m)^python -m pytest"
+      - "pytest tests/$"
+    tags:
+      - test-suite
+      - runner
+    mock_response: |
+      # Always use uv run pytest in this repo:
+      uv run pytest -q tests/unit/test_daytona_interpreter.py
+
+      # The direct invocation (without uv run) is not supported here.
+
+  # ── Daytona Test Lane ─────────────────────────────────────────────────
+
+  - name: daytona_focused_tests
+    prompt: |
+      I changed the DaytonaInterpreter lifecycle code. Which tests should
+      I run for focused Daytona coverage?
+    expected_patterns:
+      - "test_daytona_interpreter\\.py"
+      - "test_daytona_runtime\\.py"
+      - "uv run pytest"
+    forbidden_patterns:
+      - "pytest tests/$"
+      - "python -m pytest"
+    tags:
+      - test-suite
+      - daytona
+    mock_response: |
+      # Daytona-focused coverage:
+      uv run pytest -q \
+        tests/unit/test_daytona_rlm_config.py \
+        tests/unit/test_daytona_rlm_smoke.py \
+        tests/unit/test_daytona_runtime.py \
+        tests/unit/test_daytona_interpreter.py \
+        tests/unit/test_daytona_rlm_chat_agent.py \
+        tests/unit/test_daytona_workbench_chat_agent.py \
+        tests/unit/test_daytona_async_tools.py
+
+  # ── WS / Runtime Test Lane ────────────────────────────────────────────
+
+  - name: ws_runtime_tests
+    prompt: |
+      I changed the WebSocket chat streaming code. Which tests cover that?
+    expected_patterns:
+      - "test_chat_stream\\.py"
+      - "test_commands\\.py"
+      - "uv run pytest"
+    forbidden_patterns:
+      - "pytest tests/$"
+      - "python -m pytest"
+    tags:
+      - test-suite
+      - ws
+    mock_response: |
+      # Focused runtime and websocket coverage:
+      uv run pytest -q \
+        tests/ui/server/test_api_contract_routes.py \
+        tests/ui/server/test_router_runtime.py \
+        tests/ui/ws/test_chat_stream.py \
+        tests/ui/ws/test_commands.py \
+        tests/unit/test_ws_chat_helpers.py
+
+  # ── Unit Test Pattern ─────────────────────────────────────────────────
+
+  - name: unit_test_monkeypatch_pattern
+    prompt: |
+      Show the correct pattern for writing a unit test that uses
+      DaytonaInterpreter without hitting real cloud services.
+    expected_patterns:
+      - "monkeypatch"
+      - "MagicMock"
+      - "DaytonaInterpreter"
+      - "result\\.\\w+"
+      - "finally"
+      - "\\w+\\.shutdown\\(\\)"
+    forbidden_patterns:
+      - "(?m)^python -m pytest"
+    tags:
+      - test-suite
+      - unit-test
+    mock_response: |
+      from unittest.mock import MagicMock
+
+      def test_feature(monkeypatch):
+          """Test with mocked interpreter."""
+          mock_daytona = MagicMock()
+          monkeypatch.setattr(
+              "fleet_rlm.integrations.providers.daytona.interpreter.AsyncDaytona",
+              mock_daytona,
+          )
+
+          from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+          interp = DaytonaInterpreter(timeout=60)
+          interp.start()
+          try:
+              result = interp.execute("x = 42\nSUBMIT(answer=x)")
+              assert result.answer == 42  # dot notation
+          finally:
+              interp.shutdown()
+
+  # ── Avoid Too Broad ───────────────────────────────────────────────────
+
+  - name: avoid_too_broad_test_run
+    prompt: |
+      Should I run pytest tests/ to make sure everything passes before
+      committing?
+    expected_patterns:
+      - "make test-fast|make quality-gate|uv run pytest.*specific"
+      - "smallest.*lane|targeted"
+    forbidden_patterns:
+      - "pytest tests/$"
+    tags:
+      - test-suite
+      - anti-pattern
+    mock_response: |
+      # AVOID: pytest tests/ is too broad and includes slow / cloud-dependent tests.
+
+      # Use the smallest lane that matches your change:
+      # - Single file change → targeted uv run pytest for that module
+      # - Fast feedback       → make test-fast
+      # - Pre-merge contract  → make quality-gate
+
+      # Examples of targeted runs:
+      uv run pytest -q tests/unit/test_daytona_interpreter.py   # Daytona change
+      uv run pytest -q tests/ui/ws/test_chat_stream.py          # WS chat change
+
+  # ── MLflow / Observability Tests ──────────────────────────────────────
+
+  - name: mlflow_observability_tests
+    prompt: |
+      I changed the MLflow tracing integration. Which tests should I run?
+      Include the specific test file test_mlflow_integration.py in your answer.
+    expected_patterns:
+      - "test_mlflow_integration\\.py"
+      - "uv run pytest"
+    forbidden_patterns:
+      - "pytest tests/$"
+      - "(?m)^python -m pytest"
+    tags:
+      - test-suite
+      - mlflow
+    mock_response: |
+      # MLflow / observability coverage:
+      uv run pytest -q \
+        tests/unit/test_mlflow_integration.py \
+        tests/unit/test_mlflow_evaluation.py \
+        tests/unit/test_bootstrap_observability.py \
+        tests/unit/test_analytics_callback.py

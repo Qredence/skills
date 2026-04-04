@@ -1,2 +1,13 @@
 .env
-scripts/__pycache__/sync_plugins.cpython-313.pyc
+.env.*
+!.env.example
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# macOS
+.DS_Store
+**/.DS_Store

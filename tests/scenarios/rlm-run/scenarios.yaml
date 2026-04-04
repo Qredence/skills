@@ -1,0 +1,207 @@
+# Test scenarios for rlm-run skill evaluation
+# Covers entrypoint selection, daytona-smoke prerequisite, programmatic
+# dspy.RLM usage, result dot notation, and uv run prefix requirements.
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Entrypoint Selection ──────────────────────────────────────────────
+
+  - name: all_public_entrypoints
+    prompt: |
+      List all public entrypoints for fleet-rlm and explain when to use each.
+    expected_patterns:
+      - "uv run fleet web"
+      - "fleet-rlm serve-api"
+      - "fleet-rlm serve-mcp"
+      - "fleet-rlm chat"
+      - "fleet-rlm daytona-smoke"
+    forbidden_patterns:
+      - "^fleet web$"
+      - "^fleet-rlm serve"
+    tags:
+      - run
+      - entrypoints
+    mock_response: |
+      # All public fleet-rlm entrypoints (from repo root):
+
+      # Workspace-first UI work (default)
+      uv run fleet web
+
+      # Expose backend API surface
+      uv run fleet-rlm serve-api --port 8000
+
+      # MCP clients connecting to fleet-rlm tools
+      uv run fleet-rlm serve-mcp --transport stdio
+
+      # In-process terminal chat
+      uv run fleet-rlm chat
+
+      # Validate Daytona readiness before daytona_pilot workflows
+      uv run fleet-rlm daytona-smoke --repo <url> [--ref <branch>]
+
+  - name: choose_fleet_web_for_ui
+    prompt: |
+      I need to do workspace-first UI work with fleet-rlm. Which command
+      should I run?
+    expected_patterns:
+      - "uv run fleet web"
+    forbidden_patterns:
+      - "uv run fleet-rlm serve-api.*workspace|workspace.*uv run fleet-rlm serve-api"
+    tags:
+      - run
+      - ui
+    mock_response: |
+      # For workspace-first UI work, use fleet web:
+      uv run fleet web
+
+      # Only use serve-api when you specifically need the backend API surface:
+      uv run fleet-rlm serve-api --port 8000
+
+  # ── Daytona Smoke Before Workflows ────────────────────────────────────
+
+  - name: daytona_smoke_prerequisite
+    prompt: |
+      Before starting a daytona_pilot workflow, what validation step is
+      required?
+    expected_patterns:
+      - "daytona-smoke"
+      - "\\-\\-repo|--repo"
+    forbidden_patterns: []
+    tags:
+      - run
+      - smoke-test
+    mock_response: |
+      # Always run daytona-smoke BEFORE any daytona_pilot workflow:
+      uv run fleet-rlm daytona-smoke --repo <url> [--ref <branch>]
+
+      # Then proceed with DaytonaInterpreter or dspy.RLM:
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+      interp = DaytonaInterpreter(repo_url="https://github.com/your-org/your-repo")
+
+  # ── Programmatic Usage ────────────────────────────────────────────────
+
+  - name: programmatic_dspy_rlm
+    prompt: |
+      Show the full programmatic setup for using dspy.RLM with a
+      DaytonaInterpreter. Include configuration, startup, and shutdown.
+    expected_patterns:
+      - "configure_planner_from_env"
+      - "DaytonaInterpreter"
+      - "dspy\\.RLM"
+      - "signature\\s*="
+      - "interpreter\\s*="
+      - "result\\.\\w+"
+      - "finally"
+      - "\\w+\\.shutdown\\(\\)"
+    forbidden_patterns: []
+    tags:
+      - run
+      - programmatic
+    mock_response: |
+      import dspy
+      from fleet_rlm.runtime.config import configure_planner_from_env
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      configure_planner_from_env()  # Load .env and configure the planner LM
+
+      interpreter = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          volume_name="my-project",
+          timeout=120,
+      )
+      rlm = dspy.RLM(
+          signature="question -> answer, confidence",
+          interpreter=interpreter,
+          max_iterations=10,
+          max_llm_calls=20,
+          verbose=True,
+      )
+
+      interpreter.start()
+      try:
+          result = rlm(question="What are the first 10 Fibonacci numbers?")
+          print(result.answer)       # dot notation
+          print(result.confidence)   # always use dot notation
+      finally:
+          interpreter.shutdown()
+
+  # ── Result Access ─────────────────────────────────────────────────────
+
+  - name: rlm_result_dot_notation
+    prompt: |
+      How do I access results from a dspy.RLM call? Show only the correct
+      patterns using dot notation. Do not include incorrect examples or
+      anti-patterns.
+    expected_patterns:
+      - "result\\.\\w+"
+    forbidden_patterns:
+      - "result\\[\"\\w+\"\\]"
+      - "result\\['\\w+'\\]"
+    tags:
+      - run
+      - result-access
+    mock_response: |
+      result = rlm(question="What is 15 factorial?")
+
+      # Access via dot notation:
+      print(result.answer)
+      print(result.confidence)
+
+  # ── Trajectory Inspection ──────────────────────────────────────────────
+
+  - name: trajectory_inspection
+    prompt: |
+      How do I inspect the RLM execution trajectory to debug step-by-step
+      reasoning? Show how to enable verbose mode and access the trajectory.
+    expected_patterns:
+      - "trajectory"
+      - "verbose|getattr|step"
+    forbidden_patterns: []
+    tags:
+      - run
+      - debug
+    mock_response: |
+      # Enable verbose mode to see trajectory during execution:
+      rlm = dspy.RLM(
+          signature="question -> answer",
+          interpreter=interp,
+          max_iterations=10,
+          verbose=True,  # Show full trajectory
+      )
+
+      result = rlm(question="Complex task")
+
+      # Inspect trajectory after execution:
+      trajectory = getattr(result, "trajectory", [])
+      for i, step in enumerate(trajectory):
+          print(f"Step {i+1}: {step}")
+
+  # ── uv run Prefix ────────────────────────────────────────────────────
+
+  - name: uv_run_prefix_required
+    prompt: |
+      How should I invoke fleet web and fleet-rlm commands? Do I need any
+      special prefix?
+    expected_patterns:
+      - "uv run fleet"
+      - "uv run fleet-rlm"
+    forbidden_patterns:
+      - "(?m)^fleet-rlm"
+    tags:
+      - run
+      - commands
+    mock_response: |
+      # All fleet-rlm commands must be prefixed with 'uv run':
+      uv run fleet web
+      uv run fleet-rlm serve-api --port 8000
+      uv run fleet-rlm serve-mcp --transport stdio
+      uv run fleet-rlm chat
+      uv run fleet-rlm daytona-smoke --repo <url>
+
+      # WRONG (do not use):
+      # fleet web               (missing 'uv run' prefix)
+      # invoke fleet directly   (always wrap with uv run)
