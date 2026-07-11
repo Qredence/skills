@@ -4,18 +4,22 @@ This folder contains a test harness for evaluating AI-generated code against acc
 
 ## Quick Context
 
-**What we're testing:** Skills in `.github/skills/` that provide domain knowledge for Azure SDKs and fleet-rlm.
+**What we're testing:** Active skills in `../skills/`, including Figma-agent instruction skills and retained scenario-backed skills.
 
 **How it works:**
-1. Each skill has **acceptance criteria** (correct/incorrect code patterns)
-2. Test **scenarios** prompt code generation and validate the output
+1. Each active skill has a `SKILL.md` or `SKILLS.md` document
+2. Optional **scenarios** prompt code generation and validate the output
 3. The harness runs scenarios using the [GitHub Copilot SDK](https://github.com/github/copilot-sdk) and scores generated code against criteria
-4. For real-LLM evaluation without the Copilot SDK, use `scripts/evaluate_skills_litellm.py`
+4. Archived skills under `../skills/archive/` are excluded from discovery
+5. For real-LLM evaluation without the Copilot SDK, use `scripts/evaluate_skills_litellm.py`
 
 ## Current State
 
-| Skill | Criteria | Scenarios | Real-LLM Pass Rate |
-|-------|----------|-----------|-----------|
+| Surface | Source | Evaluation |
+|---------|--------|------------|
+| Active skills | `../skills/<group>/<name>/SKILL.md` or `SKILLS.md` | Discoverable |
+| Targeted checks | `tests/scenarios/<group>/<name>/scenarios.yaml` | Scenario patterns |
+| Skills without scenarios | Skill document | Smoke scenario |
 | `dspy-core` | Complete | 11 scenarios | 100% (mock) |
 | `dspy-development` | Complete | 15 scenarios | 100% (mock) |
 | `dspy-fleet-rlm` | Complete | 4 scenarios | 100% (mock) |
@@ -29,7 +33,7 @@ This folder contains a test harness for evaluating AI-generated code against acc
 | `rlm-run` | Complete | 7 scenarios | 100% |
 | `rlm-test-suite` | Complete | 8 scenarios | 100% |
 
-Run `pnpm harness --list` from the `tests/` directory to see all skills with criteria.
+Run `pnpm harness --list` from the `tests/` directory to see all active skills.
 
 ---
 

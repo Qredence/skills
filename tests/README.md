@@ -12,13 +12,13 @@ pnpm test                                        # Run unit tests
 
 ## Overview
 
-A TypeScript test framework for evaluating AI-generated code against acceptance criteria defined in skill files. Powered by the [GitHub Copilot SDK](https://github.com/github/copilot-sdk).
+A TypeScript test framework for evaluating AI-generated code against the active skills in `../skills/`. Powered by the [GitHub Copilot SDK](https://github.com/github/copilot-sdk).
 
 **Workflow:**
-1. Load acceptance criteria from `.github/skills/<skill>/references/acceptance-criteria.md`
-2. Run test scenarios from `tests/scenarios/<skill>/scenarios.yaml`
-3. Generate code using [GitHub Copilot SDK](https://github.com/github/copilot-sdk) (or mock responses)
-4. Evaluate code against correct/incorrect patterns
+1. Discover active skill documents under `../skills/` (excluding archived content)
+2. Load `SKILL.md` or `SKILLS.md` plus optional references as context
+3. Run targeted scenarios, or a smoke scenario when no scenario file exists
+4. Generate and evaluate code using the Copilot SDK (or mock responses)
 5. Report results via console, markdown, or JSON
 
 ## Architecture
@@ -27,7 +27,7 @@ A TypeScript test framework for evaluating AI-generated code against acceptance 
 tests/
 ├── harness/
 │   ├── types.ts              # Type definitions
-│   ├── criteria-loader.ts    # Parses acceptance-criteria.md
+│   ├── criteria-loader.ts    # Discovers skill documents and legacy criteria
 │   ├── evaluator.ts          # Validates code against patterns
 │   ├── copilot-client.ts     # Wraps Copilot SDK (with mock fallback)
 │   ├── runner.ts             # Main CLI runner
@@ -242,4 +242,3 @@ To enable real SDK evaluation in GitHub Actions:
 1. Create repository secret `COPILOT_TOKEN` with PAT (Copilot Requests permission)
 2. Set repository variable `ENABLE_REAL_EVAL=true`
 3. Trigger manually via Actions tab, or wait for nightly run
-

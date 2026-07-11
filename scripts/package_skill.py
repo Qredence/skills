@@ -25,9 +25,14 @@ def package_skill(skill_path):
         print(f"Error: Skill path '{skill_path}' does not exist or is not a directory.")
         return False
 
-    skill_md_path = os.path.join(skill_path, "SKILL.md")
-    if not os.path.exists(skill_md_path):
-        print(f"Error: SKILL.md not found in '{skill_path}'.")
+    skill_md_path = None
+    for filename in ("SKILL.md", "SKILLS.md"):
+        candidate = os.path.join(skill_path, filename)
+        if os.path.exists(candidate):
+            skill_md_path = candidate
+            break
+    if skill_md_path is None:
+        print(f"Error: SKILL.md or SKILLS.md not found in '{skill_path}'.")
         return False
 
     with open(skill_md_path, "r") as f:

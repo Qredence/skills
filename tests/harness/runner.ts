@@ -58,8 +58,8 @@ export interface RalphLoopSummary {
  * Runs skill evaluations end-to-end.
  *
  * Workflow:
- * 1. Load test scenarios from tests/scenarios/<skill>/
- * 2. Load acceptance criteria from .github/skills/<skill>/
+ * 1. Discover skill documents from <package>/<skill>/ at the repo root
+ * 2. Load optional targeted scenarios from tests/scenarios/<skill>/
  * 3. Generate code for each scenario using Copilot SDK
  * 4. Evaluate generated code against criteria
  * 5. Report results
@@ -95,20 +95,20 @@ export class SkillEvaluationRunner {
   }
 
   /**
-   * Find the repository root by looking for .github/skills directory.
+   * Find the repository root by looking for the figma-agent skill package.
    */
   private findRepoRoot(): string {
     const cwd = process.cwd();
 
     // Check if we're in the tests directory
-    const parentSkills = join(cwd, "..", ".github", "skills");
-    if (existsSync(parentSkills)) {
+    const parentPackage = join(cwd, "..", "figma-agent");
+    if (existsSync(parentPackage)) {
       return resolve(cwd, "..");
     }
 
     // Check if we're at the repo root
-    const rootSkills = join(cwd, ".github", "skills");
-    if (existsSync(rootSkills)) {
+    const rootPackage = join(cwd, "figma-agent");
+    if (existsSync(rootPackage)) {
       return cwd;
     }
 
@@ -117,36 +117,14 @@ export class SkillEvaluationRunner {
   }
 
   /**
-   * List skills that have both criteria and scenarios.
+   * List active skills with a main skill document.
    */
   listAvailableSkills(): string[] {
     const skillsWithCriteria = new Set(
       this.criteriaLoader.listSkillsWithCriteria()
     );
-    const skillsWithScenarios = new Set<string>();
-
-    if (existsSync(this.scenariosDir)) {
-      for (const entry of readdirSync(this.scenariosDir, {
-        withFileTypes: true,
-      })) {
-        if (entry.isDirectory()) {
-          const scenariosFile = join(
-            this.scenariosDir,
-            entry.name,
-            "scenarios.yaml"
-          );
-          if (existsSync(scenariosFile)) {
-            skillsWithScenarios.add(entry.name);
-          }
-        }
-      }
-    }
-
-    // Intersection of both sets
-    const available = [...skillsWithCriteria].filter((s) =>
-      skillsWithScenarios.has(s)
-    );
-    return available.sort();
+    // Revamped skills may use the default smoke scenario instead of a file.
+    return [...skillsWithCriteria].sort();
   }
 
   /**
@@ -216,17 +194,17 @@ export class SkillEvaluationRunner {
     const scenarios: TestScenario[] = [
       {
         name: "basic_usage",
-        prompt: `Write a basic example using the ${skillName} SDK`,
+        prompt: `Apply the ${skillName} skill to a small representative task and show the recommended output or changes.`,
         expectedPatterns: [],
         forbiddenPatterns: [],
-        tags: ["basic"],
+        tags: ["smoke"],
       },
       {
-        name: "authentication",
-        prompt: `Show how to authenticate with ${skillName}`,
+        name: "guardrails",
+        prompt: `Explain the main guardrails and scope boundaries of the ${skillName} skill, then give one concrete example.`,
         expectedPatterns: [],
         forbiddenPatterns: [],
-        tags: ["auth"],
+        tags: ["smoke"],
       },
     ];
 

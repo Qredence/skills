@@ -31,15 +31,13 @@ def init_skill(name, path):
 
     print(f"Successfully initialized skill '{name}' in '{skill_dir}'")
 
-    # Sync plugins to ensure the new skill is linked properly
+    # Best-effort plugin sync (no-op when plugins/ has no package).
     try:
         from sync_plugins import sync_fleet_skills
 
         sync_fleet_skills()
-        print("Successfully synced plugins.")
     except Exception as e:
-        print(f"Warning: Failed to sync plugins automatically: {e}")
-        print("You may need to run 'uv run python scripts/sync_plugins.py' manually.")
+        print(f"Warning: Plugin sync skipped: {e}")
 
     return True
 
@@ -49,8 +47,8 @@ if __name__ == "__main__":
     parser.add_argument("name", help="Name of the skill to create")
     parser.add_argument(
         "--path",
-        default="skills/",
-        help="Path where the skill directory will be created",
+        default="figma-agent/",
+        help="Path where the skill directory will be created (default: figma-agent/)",
     )
     args = parser.parse_args()
 

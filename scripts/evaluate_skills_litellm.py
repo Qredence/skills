@@ -20,7 +20,7 @@ import requests
 
 # Configuration
 LITELLM_API_KEY = os.getenv("LITELLM_API_KEY", "")
-LITELLM_PROXY_URL = os.getenv("LITELLM_PROXY_URL", "https://litellm-proxy-gojcb5mtua-uc.a.run.app")
+LITELLM_PROXY_URL = os.getenv("LITELLM_PROXY_URL")
 LITELLM_MODEL = os.getenv("LITELLM_DEFAULT_MODEL", "vertex-glm-5")
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -32,15 +32,27 @@ def load_scenarios(skill_name: str) -> dict[str, Any]:
     """Load scenarios.yaml for a skill."""
     path = SCENARIOS_DIR / skill_name / "scenarios.yaml"
     if not path.exists():
-        raise FileNotFoundError(f"Scenarios not found: {path}")
+        return {
+            "scenarios": [
+                {
+                    "name": "documentation_smoke",
+                    "prompt": f"Summarize the operating contract of the {skill_name} skill and give one concrete example.",
+                }
+            ]
+        }
     with open(path) as f:
         return yaml.safe_load(f)
 
 
 def load_criteria(skill_name: str) -> str:
-    """Load acceptance-criteria.md for a skill."""
+    """Load acceptance-criteria.md or the main skill document for a skill."""
     path = CRITERIA_DIR / skill_name / "references" / "acceptance-criteria.md"
     if not path.exists():
+        # skill_name is hierarchical, e.g. figma-agent/accessibility-audit
+        for filename in ("SKILL.md", "SKILLS.md"):
+            skill_path = REPO_ROOT / skill_name / filename
+            if skill_path.exists():
+                return skill_path.read_text()
         return ""
     with open(path) as f:
         return f.read()
@@ -48,17 +60,20 @@ def load_criteria(skill_name: str) -> str:
 
 def call_litellm(prompt: str, skill_context: str, model: str = LITELLM_MODEL) -> str:
     """Call LiteLLM proxy to generate code."""
+    if not LITELLM_PROXY_URL:
+        raise RuntimeError("LITELLM_PROXY_URL environment variable is required")
+
     headers = {
         "Authorization": f"Bearer {LITELLM_API_KEY}",
         "Content-Type": "application/json",
     }
-    
+
     system_prompt = f"""You are an expert Python developer. You have knowledge of this skill:
 
 {skill_context}
 
 Generate correct, working code that follows the patterns and best practices documented in the skill."""
-    
+
     payload = {
         "model": model,
         "messages": [
@@ -68,7 +83,7 @@ Generate correct, working code that follows the patterns and best practices docu
         "temperature": 0.3,
         "max_tokens": 2000,
     }
-    
+
     try:
         response = requests.post(
             f"{LITELLM_PROXY_URL}/chat/completions",
@@ -103,9 +118,9 @@ def evaluate_scenario(
     prompt = scenario.get("prompt", "")
     expected_patterns = scenario.get("expected_patterns", [])
     forbidden_patterns = scenario.get("forbidden_patterns", [])
-    
+
     print(f"  Running scenario: {name}")
-    
+
     # Generate code with LiteLLM
     try:
         code = call_litellm(prompt, skill_context)
@@ -117,7 +132,7 @@ def evaluate_scenario(
             "score": 0.0,
             "error": str(e),
         }
-    
+
     # Check expected patterns
     expected_passed = 0
     expected_warnings = []
@@ -128,7 +143,7 @@ def evaluate_scenario(
         else:
             print(f"      ✗ Expected: {pattern}")
             expected_warnings.append(pattern)
-    
+
     # Check forbidden patterns
     forbidden_violations = []
     for pattern in forbidden_patterns:
@@ -137,27 +152,29 @@ def evaluate_scenario(
             forbidden_violations.append(pattern)
         else:
             print(f"      ✓ Forbidden: {pattern}")
-    
+
     # Calculate score
     expected_total = len(expected_patterns)
     forbidden_total = len(forbidden_patterns)
-    
+
     if expected_total == 0:
         expected_score = 100.0
     else:
         expected_score = (expected_passed / expected_total) * 100
-    
+
     if forbidden_total == 0:
         forbidden_score = 100.0
     else:
-        forbidden_score = ((forbidden_total - len(forbidden_violations)) / forbidden_total) * 100
-    
+        forbidden_score = (
+            (forbidden_total - len(forbidden_violations)) / forbidden_total
+        ) * 100
+
     # Overall score (weight equally)
     overall_score = (expected_score + forbidden_score) / 2
-    
+
     # Passed if all expected patterns matched and no forbidden patterns
     passed = (expected_passed == expected_total) and (len(forbidden_violations) == 0)
-    
+
     result = {
         "name": name,
         "passed": passed,
@@ -168,12 +185,12 @@ def evaluate_scenario(
         "forbidden_total": forbidden_total,
         "warnings": expected_warnings if expected_warnings else None,
     }
-    
+
     if passed:
         print(f"    ✓ Score: {overall_score:.1f}")
     else:
         print(f"    ✗ Score: {overall_score:.1f}")
-    
+
     return result
 
 
@@ -181,27 +198,29 @@ def evaluate_skill(skill_name: str, limit: int = None) -> dict[str, Any]:
     """Evaluate all scenarios for a skill."""
     print(f"\nEvaluating skill: {skill_name}")
     print("=" * 50)
-    
+
     # Load scenarios and criteria
     data = load_scenarios(skill_name)
     skill_context = load_criteria(skill_name)
-    
+
     scenarios = data.get("scenarios", [])
     if limit:
         scenarios = scenarios[:limit]
-    
+
     # Evaluate each scenario
     results = []
     for scenario in scenarios:
         result = evaluate_scenario(skill_name, scenario, skill_context)
         results.append(result)
-    
+
     # Summary
     passed_count = sum(1 for r in results if r.get("passed"))
     total_count = len(results)
-    avg_score = sum(r.get("score", 0) for r in results) / total_count if total_count > 0 else 0
+    avg_score = (
+        sum(r.get("score", 0) for r in results) / total_count if total_count > 0 else 0
+    )
     pass_rate = (passed_count / total_count * 100) if total_count > 0 else 0
-    
+
     print()
     print("Evaluation Summary: " + skill_name)
     print("=" * 50)
@@ -211,7 +230,7 @@ def evaluate_skill(skill_name: str, limit: int = None) -> dict[str, Any]:
     print(f"Pass Rate: {pass_rate:.1f}%")
     print(f"Average Score: {avg_score:.1f}")
     print()
-    
+
     return {
         "skill": skill_name,
         "total": total_count,
@@ -225,17 +244,8 @@ def evaluate_skill(skill_name: str, limit: int = None) -> dict[str, Any]:
 
 def main():
     """Evaluate specified skills or all RLM skills."""
-    skills = sys.argv[1:] if sys.argv[1:] else [
-        "rlm",
-        "rlm-batch",
-        "rlm-debug",
-        "rlm-execute",
-        "rlm-long-context",
-        "rlm-memory",
-        "rlm-run",
-        "rlm-test-suite",
-    ]
-    
+    skills = sys.argv[1:] if sys.argv[1:] else discover_skills()
+
     all_results = []
     for skill in skills:
         try:
@@ -243,7 +253,7 @@ def main():
             all_results.append(result)
         except Exception as e:
             print(f"[ERROR] Failed to evaluate {skill}: {e}")
-    
+
     # Final summary
     print("\n" + "=" * 70)
     print("FINAL RESULTS")
@@ -254,7 +264,52 @@ def main():
         total = result["total"]
         rate = result["pass_rate"]
         score = result["avg_score"]
-        print(f"{skill:25} | {passed:2}/{total:2} ({rate:5.1f}%) | avg score: {score:5.1f}")
+        print(
+            f"{skill:25} | {passed:2}/{total:2} ({rate:5.1f}%) | avg score: {score:5.1f}"
+        )
+
+
+# Top-level dirs that are never skill packages.
+_EXCLUDED_TOP_LEVEL = frozenset(
+    {
+        "archive",
+        "scripts",
+        "tests",
+        "plugins",
+        "docs",
+        ".agents",
+        ".github",
+        ".git",
+        ".venv",
+        ".ruff_cache",
+        ".claude",
+        ".claude-plugin",
+        ".cursor-plugin",
+        "node_modules",
+    }
+)
+
+
+def discover_skills() -> list[str]:
+    """Return active skills with either supported main document format.
+
+    Skills live at the repo root under package dirs (e.g. figma-agent/<skill>/).
+    The archive/ tree is excluded.
+    """
+    skills: list[str] = []
+    for package in sorted(REPO_ROOT.iterdir()):
+        if (
+            not package.is_dir()
+            or package.name.startswith(".")
+            or package.name in _EXCLUDED_TOP_LEVEL
+        ):
+            continue
+        for skill in sorted(package.iterdir()):
+            if skill.is_dir() and (
+                (skill / "SKILL.md").exists() or (skill / "SKILLS.md").exists()
+            ):
+                skills.append(f"{package.name}/{skill.name}")
+    return skills
 
 
 if __name__ == "__main__":

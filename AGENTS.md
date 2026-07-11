@@ -23,60 +23,55 @@ uv run ruff check .              # Lint
 uv run ruff format .             # Format
 
 # Skill Management
-uv run python scripts/init_skill.py <name> --path skills/    # Create new skill
-uv run python scripts/package_skill.py skills/<name>         # Validate & package
-uv run python scripts/sync_plugins.py                        # Sync plugins
+uv run python scripts/init_skill.py <name>                   # Create under figma-agent/
+uv run python scripts/init_skill.py <name> --path figma-agent/
+uv run python scripts/package_skill.py figma-agent/<name>    # Validate & package
+uv run python scripts/sync_plugins.py                        # Plugin packaging (no-op until plugins/ is populated)
 
-# Testing (from tests/ directory)
+# Testing (from tests/; active skills are under figma-agent/)
 cd tests && pnpm install        # Install test dependencies
-pnpm harness --list             # List available skills (12 with full coverage)
-pnpm harness <skill> --mock     # Run tests in mock mode
-pnpm harness <skill> --verbose  # Run with real LLM (requires GH_TOKEN)
+pnpm harness --list             # List active skills (SKILL.md/SKILLS.md)
+pnpm harness figma-agent/<skill> --mock     # Run tests in mock mode
+pnpm harness figma-agent/<skill> --verbose  # Run with real LLM (requires GH_TOKEN)
 pnpm test                       # Run all unit tests
 
 # Real-LLM Evaluation (LiteLLM proxy)
 LITELLM_API_KEY="..." \
 LITELLM_PROXY_URL="https://litellm-proxy-gojcb5mtua-uc.a.run.app" \
 LITELLM_DEFAULT_MODEL="glm-5-maas" \
-uv run python scripts/evaluate_skills_litellm.py              # All RLM skills
-uv run python scripts/evaluate_skills_litellm.py rlm rlm-run # Specific skills
+uv run python scripts/evaluate_skills_litellm.py                          # All active skills
+uv run python scripts/evaluate_skills_litellm.py figma-agent/accessibility-audit
 ```
 
 ## Directory Structure
 
 ```
-skills/                          # Single source of truth for skill definitions
-├── fastapi-router-py/          # Example skill
-│   ├── SKILL.md                # Required: skill definition with YAML frontmatter
-│   ├── scripts/                # Optional: executable utilities
-│   ├── references/             # Optional: detailed documentation
-│   └── assets/                 # Optional: templates and static files
+figma-agent/                     # Active Figma Design Agent skills
+└── <skill-name>/
+    └── SKILLS.md                # Figma-native skill document (YAML frontmatter)
+
+archive/                         # Historical skills (excluded from discovery)
+└── <skill-name>/SKILL.md
 
 scripts/                         # Repository management utilities
 ├── init_skill.py               # Scaffold new skills
 ├── package_skill.py            # Validate and package skills
-├── sync_plugins.py             # Sync symlinks to plugin directories
+├── sync_plugins.py             # Plugin packaging (reserved / no-op for now)
 └── evaluate_skills_litellm.py  # Real-LLM evaluator via LiteLLM proxy
 
-plugins/                         # Ecosystem-specific packaging (symlinks)
-└── fleet-skills/             # Main plugin package
+plugins/                         # Reserved for ecosystem packaging (empty for now)
 
 .agents/                         # Sub-agent definitions (Markdown + YAML frontmatter)
-├── sub-agents/                 # Task-specific agents
-│   ├── explorer.md             # Read-only code exploration
-│   ├── tester.md               # Test execution
-│   ├── implementer.md          # Code implementation
-│   └── evaluator.md            # Skills evaluation
-├── mcp/                        # MCP server configurations
-└── skills/                     # Skill-specific agent configs
+├── sub-agents/
+├── mcp/
+└── skills/
 
-tests/                           # Microsoft skills testing harness
-├── harness/                    # Evaluation framework
-├── scenarios/                  # Test scenarios per skill
+tests/                           # Skill evaluation harness
+├── harness/                    # TypeScript evaluator framework
+├── scenarios/                  # Optional scenario YAML files
 └── AGENTS.md                   # Testing-specific agent instructions
 
 .github/
-├── skills/                     # Skills with acceptance criteria
 ├── workflows/                  # CI/CD pipelines
 └── CONTRIBUTING.md             # Contribution guidelines
 ```
@@ -87,22 +82,22 @@ tests/                           # Microsoft skills testing harness
 
 1. **Scaffold the skill:**
    ```bash
-   uv run python scripts/init_skill.py <skill-name> --path skills/
+   uv run python scripts/init_skill.py <skill-name> --path figma-agent/
    ```
 
-2. **Edit SKILL.md** with:
+2. **Edit the skill document** (`SKILLS.md` for Figma-native skills, or `SKILL.md`):
    - YAML frontmatter (`name`, `description`)
    - Usage instructions and examples
    - Reference links
 
-3. **Add supporting files:**
+3. **Add supporting files (optional):**
    - `scripts/` - Executable utilities
    - `references/` - Detailed documentation
    - `assets/` - Templates and static files
 
 4. **Validate and package:**
    ```bash
-   uv run python scripts/package_skill.py skills/<skill-name>
+   uv run python scripts/package_skill.py figma-agent/<skill-name>
    ```
 
 ### Packaging a Skill
@@ -147,16 +142,15 @@ Brief overview and quick start instructions.
 
 | Directory | Purpose | Required |
 |-----------|---------|----------|
-| `SKILL.md` | Skill definition with frontmatter | Yes |
+| `SKILLS.md` or `SKILL.md` | Skill definition with frontmatter | Yes |
 | `scripts/` | Executable Python/Shell utilities | No |
 | `references/` | Detailed technical documentation | No |
 | `assets/` | Templates, examples, static files | No |
 
 ### Naming Conventions
 
-- Use kebab-case: `dspy-core`, `fastapi-router-py`
-- Include language suffix when relevant: `-py`, `-ts`, `-go`
-- Be specific: `azure-ai-projects-py` not `azure-ai`
+- Use kebab-case: `accessibility-audit`, `design-tokens-sync`
+- Prefer task-oriented names for Figma skills
 
 ## Sub-Agent System
 
@@ -263,17 +257,13 @@ pnpm harness <skill-name> --ralph --mock --max-iterations 5
 pnpm test
 ```
 
-### Acceptance Criteria Location
-
-```
-.github/skills/<skill-name>/references/acceptance-criteria.md
-```
-
 ### Test Scenarios Location
 
 ```
-tests/scenarios/<skill-name>/scenarios.yaml
+tests/scenarios/<skill-id>/scenarios.yaml
 ```
+
+Skill IDs are hierarchical (e.g. `figma-agent/accessibility-audit`). Scenarios are optional; the harness falls back to a smoke scenario when none exist.
 
 For detailed testing instructions, see `tests/AGENTS.md`.
 
@@ -282,41 +272,35 @@ For detailed testing instructions, see `tests/AGENTS.md`.
 ### Create a New Skill
 
 ```bash
-uv run python scripts/init_skill.py my-new-skill --path skills/
-# Edit skills/my-new-skill/SKILL.md
-uv run python scripts/package_skill.py skills/my-new-skill
+uv run python scripts/init_skill.py my-new-skill --path figma-agent/
+# Edit figma-agent/my-new-skill/SKILLS.md (or SKILL.md)
+uv run python scripts/package_skill.py figma-agent/my-new-skill
 ```
 
 ### Add Test Coverage for a Skill
 
-1. Create acceptance criteria: `.github/skills/<name>/references/acceptance-criteria.md`
-2. Create scenarios: `tests/scenarios/<name>/scenarios.yaml`
-3. Verify mock mode: `cd tests && pnpm harness <name> --mock --verbose`
-4. Run real-LLM evaluation to confirm quality:
+1. Create scenarios: `tests/scenarios/figma-agent/<name>/scenarios.yaml` (optional)
+2. Verify mock mode: `cd tests && pnpm harness figma-agent/<name> --mock --verbose`
+3. Run real-LLM evaluation to confirm quality:
    ```bash
    LITELLM_API_KEY="..." LITELLM_DEFAULT_MODEL="glm-5-maas" \
-   uv run python scripts/evaluate_skills_litellm.py <name>
+   uv run python scripts/evaluate_skills_litellm.py figma-agent/<name>
    ```
-5. Target: ≥70% pass rate and ≥85 average score against a real LLM
 
-### Skills With Full Evaluation Coverage
+### Active skill discovery
 
-The following skills have acceptance criteria + scenario files and have been
-validated against a real LLM (all ≥70% pass rate):
-
-**DSPy:** `dspy-core`, `dspy-development`, `dspy-fleet-rlm`, `dspy-optimization`
-
-**RLM:** `rlm`, `rlm-batch`, `rlm-debug`, `rlm-execute`, `rlm-long-context`,
-`rlm-memory`, `rlm-run`, `rlm-test-suite`
+The harness discovers skill packages at the **repository root** (currently
+`figma-agent/`), accepts either `SKILL.md` or `SKILLS.md`, excludes `archive/`,
+and uses optional `tests/scenarios/.../scenarios.yaml` files for targeted checks.
 
 ### Convert Agents to TOML (for Codex)
 
 ```bash
-# Single agent
-python3 skills/agent-converter/scripts/convert_agent.py .agents/sub-agents/explorer.md
+# Single agent (agent-converter lives under archive/)
+python3 archive/agent-converter/scripts/convert_agent.py .agents/sub-agents/explorer.md
 
 # Batch convert
-python3 skills/agent-converter/scripts/convert_agent.py --batch .agents/sub-agents/
+python3 archive/agent-converter/scripts/convert_agent.py --batch .agents/sub-agents/
 ```
 
 ### Run CI Checks Locally
