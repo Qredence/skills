@@ -1,0 +1,268 @@
+# Test scenarios for rlm skill evaluation
+# Covers DaytonaInterpreter setup, dspy.RLM usage, result access, document tools,
+# entrypoint selection, and sub-agent delegation patterns.
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── DaytonaInterpreter Setup ──────────────────────────────────────────
+
+  - name: basic_interpreter_setup
+    prompt: |
+      Show me how to set up a DaytonaInterpreter to run Python code in a
+      Daytona sandbox. Include the correct import, configure call, start/shutdown
+      lifecycle, and an example that returns a result.
+    expected_patterns:
+      - "configure_planner_from_env"
+      - "DaytonaInterpreter"
+      - "from.*DaytonaInterpreter|import.*DaytonaInterpreter"
+      - "\\w+\\.start\\(\\)"
+      - "\\w+\\.shutdown\\(\\)"
+      - "finally"
+    forbidden_patterns: []
+    tags:
+      - setup
+      - lifecycle
+    mock_response: |
+      from fleet_rlm.runtime.config import configure_planner_from_env
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      configure_planner_from_env()
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          timeout=600,
+      )
+      interp.start()
+      try:
+          result = interp.execute("SUBMIT(answer=42)")
+          print(result.answer)
+      finally:
+          interp.shutdown()
+
+  # ── dspy.RLM Usage ────────────────────────────────────────────────────
+
+  - name: dspy_rlm_with_interpreter
+    prompt: |
+      Create a dspy.RLM pipeline that uses a DaytonaInterpreter backend to
+      summarize a long document. Use the SummarizeLongDocument signature,
+      configure the planner from env, and access results correctly.
+    expected_patterns:
+      - "configure_planner_from_env"
+      - "DaytonaInterpreter"
+      - "dspy\\.RLM"
+      - "signature\\s*="
+      - "interpreter\\s*="
+      - "result\\.\\w+"
+      - "finally"
+    forbidden_patterns: []
+    tags:
+      - dspy
+      - rlm
+    mock_response: |
+      import dspy
+      from fleet_rlm.runtime.config import configure_planner_from_env
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+      from fleet_rlm.runtime.agent.signatures import SummarizeLongDocument
+
+      configure_planner_from_env()
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          volume_name="rlm-volume-dspy",
+          timeout=900,
+      )
+      interp.start()
+      try:
+          rlm = dspy.RLM(
+              signature=SummarizeLongDocument,
+              interpreter=interp,
+              max_iterations=20,
+              max_llm_calls=30,
+              verbose=True,
+          )
+          result = rlm(
+              document=open('doc.txt').read(),
+              focus="What are the main design decisions?",
+          )
+          print(result.summary)
+          print(result.key_points)
+      finally:
+          interp.shutdown()
+
+  # ── Result Access ─────────────────────────────────────────────────────
+
+  - name: result_dot_notation
+    prompt: |
+      Show the correct way to access results from interp.execute() using dot
+      notation. Only show correct patterns — do not include anti-patterns or
+      incorrect examples.
+    expected_patterns:
+      - "SUBMIT"
+      - "result\\.\\w+"
+    forbidden_patterns: []
+    tags:
+      - result-access
+      - patterns
+    mock_response: |
+      # SUBMIT returns a FinalOutput object — access fields via dot notation
+      result = interp.execute("SUBMIT(answer='Paris', confidence=0.99)")
+      print(result.answer)      # 'Paris'
+      print(result.confidence)  # 0.99
+
+      # WRONG: subscript access raises AttributeError
+      # print(result["answer"])  # Do NOT do this
+
+  # ── Document Tools ────────────────────────────────────────────────────
+
+  - name: pdf_document_tools
+    prompt: |
+      Show how to load and read a PDF document stored in the Daytona durable
+      volume. Use the correct document tools, not raw file reading.
+    expected_patterns:
+      - "load_document|read_file_slice"
+      - "/home/daytona/memory"
+      - "SUBMIT"
+    forbidden_patterns:
+      - "open\\(.*\\.pdf.*\\)\\.read\\(\\)"
+      - "(?m)^[^#\\n]*\\.read_text\\(\\)"
+    tags:
+      - documents
+      - pdf
+    mock_response: |
+      result = interp.execute("""
+      doc = load_document('/home/daytona/memory/artifacts/report.pdf')
+      section = read_file_slice(doc, start=0, length=5000)
+      SUBMIT(content=section, loaded=True)
+      """)
+      print(result.content)
+      print(result.loaded)
+
+  # ── Entrypoints ───────────────────────────────────────────────────────
+
+  - name: entrypoint_selection
+    prompt: |
+      What command should I run for workspace-first UI work with fleet-rlm?
+      Show the full list of public entrypoints and when to use each.
+      List all five commands: fleet web, serve-api, serve-mcp, chat, daytona-smoke.
+    expected_patterns:
+      - "uv run fleet web"
+      - "fleet-rlm serve-api"
+      - "fleet-rlm serve-mcp"
+      - "fleet-rlm chat"
+      - "fleet-rlm daytona-smoke"
+    forbidden_patterns: []
+    tags:
+      - entrypoints
+      - commands
+    mock_response: |
+      # Workspace-first UI work (default choice)
+      uv run fleet web
+
+      # Expose backend API surface explicitly
+      uv run fleet-rlm serve-api --port 8000
+
+      # MCP clients that talk to fleet-rlm tools
+      uv run fleet-rlm serve-mcp --transport stdio
+
+      # In-process terminal chat
+      uv run fleet-rlm chat
+
+      # Validate Daytona readiness BEFORE any daytona_pilot workflow
+      uv run fleet-rlm daytona-smoke --repo <url> [--ref <branch>]
+
+  # ── Sub-Agent Delegation ──────────────────────────────────────────────
+
+  - name: subcall_delegation
+    prompt: |
+      How do I delegate a leaf chunk analysis task to rlm-subcall? Show the
+      correct invocation dict and the expected response structure. Include
+      the full response structure with relevant, missing, and suggested_queries
+      fields.
+    expected_patterns:
+      - "rlm-subcall"
+      - "chunk_path"
+      - "query"
+      - "chunk_id"
+      - "relevant"
+      - "missing"
+      - "suggested_queries"
+    forbidden_patterns: []
+    tags:
+      - delegation
+      - subcall
+    mock_response: |
+      # Invoke rlm-subcall with a dict:
+      # subagent: rlm-subcall
+      # input:
+      #   chunk_path: /tmp/chunks/chunk_0001.txt
+      #   query: "What modules does DSPy provide?"
+      #   chunk_id: chunk_0001
+
+      # Expected response:
+      # {
+      #   "chunk_id": "chunk_0001",
+      #   "relevant": [{"point": "...", "evidence": "...", "confidence": "high"}],
+      #   "missing": ["..."],
+      #   "suggested_queries": ["..."]
+      # }
+
+      # Synthesize results in the sandbox:
+      result = interp.execute("""
+      import json
+      findings = []
+      for r in all_results:
+          for item in r.get('relevant', []):
+              if item['confidence'] in ('high', 'medium'):
+                  findings.append(item)
+      SUBMIT(findings=findings, total=len(findings))
+      """, variables={'all_results': all_results})
+      print(result.findings)
+
+  # ── Durable Volume ────────────────────────────────────────────────────
+
+  - name: durable_volume_usage
+    prompt: |
+      Show how to use the Daytona durable volume to persist results across
+      sandbox sessions. Demonstrate writing and reading back data.
+    expected_patterns:
+      - "volume_name\\s*="
+      - "/home/daytona/memory"
+      - "json\\.dump|json\\.load"
+      - "SUBMIT"
+      - "finally"
+    forbidden_patterns:
+      - "/tmp/"
+    tags:
+      - volume
+      - persistence
+    mock_response: |
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          volume_name="my-data",
+          timeout=600,
+      )
+      interp.start()
+      try:
+          interp.execute("""
+      import json, os
+      os.makedirs('/home/daytona/memory/artifacts', exist_ok=True)
+      data = {"processed": True, "count": 42}
+      with open('/home/daytona/memory/artifacts/results.json', 'w') as f:
+          json.dump(data, f)
+      SUBMIT(status="saved")
+      """)
+          result = interp.execute("""
+      import json
+      with open('/home/daytona/memory/artifacts/results.json') as f:
+          data = json.load(f)
+      SUBMIT(data=data)
+      """)
+          print(result.data)
+      finally:
+          interp.shutdown()

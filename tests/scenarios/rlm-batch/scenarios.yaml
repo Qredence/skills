@@ -1,0 +1,246 @@
+# Test scenarios for rlm-batch skill evaluation
+# Covers rlm_query_batched (inside sandbox), ThreadPoolExecutor parallelism,
+# shared durable volume patterns, and parameter sweeps.
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Inside-Sandbox Batching ───────────────────────────────────────────
+
+  - name: rlm_query_batched_inside_sandbox
+    prompt: |
+      Show how to run multiple concurrent sub-queries from inside a Daytona
+      sandbox session using the batched query helper. Return the results via SUBMIT.
+    expected_patterns:
+      - "rlm_query_batched"
+      - "concurrency"
+      - "SUBMIT"
+    forbidden_patterns:
+      - "parallel_semantic_map"
+      - "ThreadPoolExecutor"
+    tags:
+      - batch
+      - sandbox
+    mock_response: |
+      # Inside Daytona sandbox code (not host Python):
+      results = rlm_query_batched(
+          [
+              "summarize this chunk: ...",
+              "extract errors from: ...",
+              "identify patterns in: ...",
+          ],
+          concurrency=3,
+      )
+      SUBMIT(summaries=results)
+
+  # ── Host-Side Parallelism ─────────────────────────────────────────────
+
+  - name: threadpool_parallel_interpreters
+    prompt: |
+      Show how to run multiple independent Daytona sandbox tasks in parallel
+      from the host using ThreadPoolExecutor. Each task should have its own
+      DaytonaInterpreter instance.
+    expected_patterns:
+      - "ThreadPoolExecutor"
+      - "DaytonaInterpreter"
+      - "\\w+\\.start\\(\\)"
+      - "\\w+\\.shutdown\\(\\)"
+      - "finally"
+      - "as_completed|pool\\.submit|pool\\.map"
+    forbidden_patterns:
+      - "parallel_semantic_map"
+    tags:
+      - batch
+      - threadpool
+    mock_response: |
+      from concurrent.futures import ThreadPoolExecutor, as_completed
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      tasks = [
+          "result = sum(range(1000)); SUBMIT(total=result)",
+          "import math; SUBMIT(pi_approx=math.pi)",
+          "SUBMIT(greeting='Hello from Daytona')",
+      ]
+
+      def run_task(code):
+          interp = DaytonaInterpreter(
+              repo_url="https://github.com/your-org/your-repo",
+              timeout=120,
+          )
+          interp.start()
+          try:
+              return interp.execute(code)
+          finally:
+              interp.shutdown()
+
+      with ThreadPoolExecutor(max_workers=3) as pool:
+          futures = {pool.submit(run_task, t): i for i, t in enumerate(tasks)}
+          for future in as_completed(futures):
+              idx = futures[future]
+              result = future.result()
+              print(f"Task {idx}: {result}")
+
+  # ── Shared Durable Volume ─────────────────────────────────────────────
+
+  - name: batch_shared_volume
+    prompt: |
+      Show how to run parallel tasks that each write results to the same
+      shared Daytona durable volume. Use a fixed volume_name so all tasks
+      share the same persistent storage.
+    expected_patterns:
+      - "ThreadPoolExecutor"
+      - "DaytonaInterpreter"
+      - "volume_name\\s*="
+      - "/home/daytona/memory"
+      - "finally"
+    forbidden_patterns:
+      - "/tmp/"
+    tags:
+      - batch
+      - volume
+    mock_response: |
+      from concurrent.futures import ThreadPoolExecutor
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      VOLUME = 'rlm-volume-dspy'
+      REPO = 'https://github.com/your-org/your-repo'
+
+      def process_chunk(chunk_id, data):
+          code = (
+              f"import json, os\n"
+              f"data = {repr(data)}\n"
+              f"os.makedirs('/home/daytona/memory/artifacts', exist_ok=True)\n"
+              f"with open(f'/home/daytona/memory/artifacts/chunk_{chunk_id}.json', 'w') as f:\n"
+              f"    json.dump(data, f)\n"
+              f"SUBMIT(chunk_id={chunk_id}, count=len(data))"
+          )
+          interp = DaytonaInterpreter(repo_url=REPO, timeout=120, volume_name=VOLUME)
+          interp.start()
+          try:
+              return interp.execute(code)
+          finally:
+              interp.shutdown()
+
+      chunks = {0: [1, 2, 3], 1: [4, 5, 6], 2: [7, 8, 9]}
+      with ThreadPoolExecutor(max_workers=3) as pool:
+          futures = [pool.submit(process_chunk, cid, d) for cid, d in chunks.items()]
+          for f in futures:
+              r = f.result()
+              print(f"Chunk {r.chunk_id}: {r.count} items")
+
+  # ── Parameter Sweep ───────────────────────────────────────────────────
+
+  - name: parameter_sweep
+    prompt: |
+      Show how to do a parameter sweep across learning rates and batch sizes
+      using parallel Daytona sandbox executions. Return the best result.
+    expected_patterns:
+      - "ThreadPoolExecutor"
+      - "DaytonaInterpreter"
+      - "SUBMIT"
+      - "finally"
+      - "max_workers"
+    forbidden_patterns:
+      - "parallel_semantic_map"
+    tags:
+      - batch
+      - sweep
+    mock_response: |
+      from concurrent.futures import ThreadPoolExecutor
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      REPO = 'https://github.com/your-org/your-repo'
+
+      def sweep(lr, batch_size):
+          code = (
+              "import random\n"
+              "random.seed(42)\n"
+              f"loss = 1.0 / ({lr} * {batch_size} + 0.01) + random.random() * 0.1\n"
+              f"SUBMIT(lr={lr}, batch_size={batch_size}, loss=loss)"
+          )
+          interp = DaytonaInterpreter(repo_url=REPO, timeout=300)
+          interp.start()
+          try:
+              return interp.execute(code)
+          finally:
+              interp.shutdown()
+
+      params = [(0.001, 32), (0.01, 32), (0.001, 64), (0.01, 64)]
+      with ThreadPoolExecutor(max_workers=2) as pool:
+          results = list(pool.map(lambda p: sweep(*p), params))
+          best = min(results, key=lambda r: r.loss)
+          print(f"Best: lr={best.lr}, batch={best.batch_size}, loss={best.loss:.4f}")
+
+  # ── Sequential Reuse ──────────────────────────────────────────────────
+
+  - name: sequential_batch_single_interpreter
+    prompt: |
+      Show how to process a sequential batch of tasks by reusing a single
+      DaytonaInterpreter across multiple execute() calls.
+    expected_patterns:
+      - "DaytonaInterpreter"
+      - "\\w+\\.start\\(\\)"
+      - "\\w+\\.execute"
+      - "finally"
+      - "\\w+\\.shutdown\\(\\)"
+    forbidden_patterns:
+      - "parallel_semantic_map"
+    tags:
+      - batch
+      - sequential
+    mock_response: |
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          timeout=300,
+      )
+      interp.start()
+      try:
+          for i in range(5):
+              result = interp.execute(
+                  f"import math; SUBMIT(task={i}, value=math.factorial({i + 10}))"
+              )
+              print(f"Task {result.task}: {result.value}")
+      finally:
+          interp.shutdown()
+
+  # ── Avoid parallel_semantic_map ───────────────────────────────────────
+
+  - name: avoid_parallel_semantic_map
+    prompt: |
+      I want to run parallel semantic analysis on multiple chunks using the
+      Daytona RLM path. What's the correct approach?
+    expected_patterns:
+      - "rlm_query_batched|ThreadPoolExecutor"
+      - "DaytonaInterpreter|concurrency"
+    forbidden_patterns:
+      - "parallel_semantic_map"
+    tags:
+      - batch
+      - anti-pattern
+    mock_response: |
+      # Use rlm_query_batched from inside a sandbox session:
+      results = rlm_query_batched(
+          ["analyze chunk 1", "analyze chunk 2", "analyze chunk 3"],
+          concurrency=3,
+      )
+      SUBMIT(results=results)
+
+      # Or, from the host, use ThreadPoolExecutor with separate DaytonaInterpreter instances:
+      from concurrent.futures import ThreadPoolExecutor
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      def analyze(chunk):
+          interp = DaytonaInterpreter(repo_url="https://github.com/your-org/your-repo", timeout=120)
+          interp.start()
+          try:
+              return interp.execute(f"SUBMIT(result='analyzed: {chunk[:20]}')")
+          finally:
+              interp.shutdown()
+
+      with ThreadPoolExecutor(max_workers=3) as pool:
+          results = list(pool.map(analyze, chunks))

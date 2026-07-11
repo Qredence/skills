@@ -1,0 +1,243 @@
+# Test scenarios for rlm-memory skill evaluation
+# Covers durable volume paths, canonical directories, json persistence,
+# buffer patterns, checkpoint patterns, and cross-session volume usage.
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Durable Volume Basics ─────────────────────────────────────────────
+
+  - name: store_and_recall_from_volume
+    prompt: |
+      Show how to store a JSON result to the Daytona durable volume and
+      recall it in a subsequent session. Always use try/finally with shutdown().
+    expected_patterns:
+      - "volume_name\\s*="
+      - "/home/daytona/memory/artifacts"
+      - "json\\.dump"
+      - "json\\.load"
+      - "finally"
+    forbidden_patterns:
+      - "open\\('/tmp/"
+      - "makedirs\\('/tmp"
+    tags:
+      - memory
+      - persistence
+    mock_response: |
+      from fleet_rlm.integrations.providers.daytona.interpreter import DaytonaInterpreter
+
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          timeout=120,
+          volume_name="rlm-volume-dspy",
+      )
+      interp.start()
+      try:
+          interp.execute('''
+      import json, os
+      os.makedirs('/home/daytona/memory/artifacts', exist_ok=True)
+      data = {'result': 'my-finding', 'created': '2026-04-03'}
+      with open('/home/daytona/memory/artifacts/analysis.json', 'w') as f:
+          json.dump(data, f)
+      ''')
+          result = interp.execute('''
+      import json
+      with open('/home/daytona/memory/artifacts/analysis.json') as f:
+          data = json.load(f)
+      SUBMIT(result=data['result'])
+      ''')
+          print(result.result)
+      finally:
+          interp.shutdown()
+
+  # ── Canonical Directory Usage ─────────────────────────────────────────
+
+  - name: canonical_directory_structure
+    prompt: |
+      What are the canonical directories under the Daytona durable volume
+      and what should each be used for?
+    expected_patterns:
+      - "/home/daytona/memory/memory"
+      - "/home/daytona/memory/artifacts"
+      - "/home/daytona/memory/buffers"
+      - "/home/daytona/memory/meta"
+    forbidden_patterns:
+      - "open\\('/tmp/"
+      - "makedirs\\('/tmp"
+    tags:
+      - memory
+      - directories
+    mock_response: |
+      # Canonical directories under /home/daytona/memory/:
+      #
+      # /home/daytona/memory/memory/   — key-value and named memory items
+      # /home/daytona/memory/artifacts/ — produced outputs and saved results
+      # /home/daytona/memory/buffers/   — named buffer lists (session logs, staging)
+      # /home/daytona/memory/meta/      — session manifests and workspace metadata
+
+      import os
+      for d in ['memory', 'artifacts', 'buffers', 'meta']:
+          os.makedirs(f'/home/daytona/memory/{d}', exist_ok=True)
+
+  # ── Buffer Pattern ────────────────────────────────────────────────────
+
+  - name: add_get_buffer_pattern
+    prompt: |
+      Show how to use add_buffer and get_buffer to build up a session log
+      across multiple execute() calls.
+    expected_patterns:
+      - "add_buffer"
+      - "get_buffer"
+      - "SUBMIT"
+      - "result\\.\\w+"
+    forbidden_patterns:
+      - "result\\[\"\\w+\"\\]"
+      - "/tmp/"
+    tags:
+      - memory
+      - buffers
+    mock_response: |
+      interp.start()
+      try:
+          interp.execute('add_buffer("log", "Step 1: setup")')
+          interp.execute('add_buffer("log", "Step 2: done")')
+          result = interp.execute('SUBMIT(log=get_buffer("log"))')
+          print(result.log)  # ["Step 1: setup", "Step 2: done"]
+      finally:
+          interp.shutdown()
+
+  # ── Checkpoint Pattern ────────────────────────────────────────────────
+
+  - name: checkpoint_pattern
+    prompt: |
+      Show how to save intermediate results as checkpoints during a long
+      workflow so they can be resumed in the next session.
+      Use /home/daytona/memory/buffers/ for checkpoints and use try/finally.
+    expected_patterns:
+      - "/home/daytona/memory/buffers"
+      - "json\\.dump"
+      - "json\\.load"
+      - "finally"
+    forbidden_patterns:
+      - "open\\('/tmp/"
+      - "makedirs\\('/tmp"
+    tags:
+      - memory
+      - checkpoint
+    mock_response: |
+      interp.start()
+      try:
+          # Save intermediate results
+          interp.execute('''
+      import json, os
+      root = '/home/daytona/memory/buffers/checkpoints'
+      os.makedirs(root, exist_ok=True)
+      with open(f'{root}/batch_1.json', 'w') as f:
+          json.dump([{'i': i} for i in range(100)], f)
+      ''')
+          # Resume in next execute() call or next session
+          result = interp.execute('''
+      import json
+      with open('/home/daytona/memory/buffers/checkpoints/batch_1.json') as f:
+          previous = json.load(f)
+      SUBMIT(count=len(previous))
+      ''')
+          print(result.count)  # 100
+      finally:
+          interp.shutdown()
+
+  # ── Session Manifest Path ─────────────────────────────────────────────
+
+  - name: session_manifest_path
+    prompt: |
+      What is the correct path format for session manifests in the Daytona
+      durable volume?
+    expected_patterns:
+      - "/home/daytona/memory/meta/workspaces"
+      - "react-session"
+      - "\\.json"
+    forbidden_patterns:
+      - "/tmp/"
+    tags:
+      - memory
+      - manifest
+    mock_response: |
+      # Session manifest canonical path:
+      # /home/daytona/memory/meta/workspaces/<workspace_id>/users/<user_id>/react-session-<session_id>.json
+
+      manifest_path = (
+          f'/home/daytona/memory/meta/workspaces/{ws_id}'
+          f'/users/{user_id}/react-session-{session_id}.json'
+      )
+
+  # ── Avoid /tmp for Persistence ────────────────────────────────────────
+
+  - name: avoid_tmp_for_persistence
+    prompt: |
+      I want to persist a computation result between two different sandbox
+      sessions. Can I save it to /tmp?
+    expected_patterns:
+      - "/home/daytona/memory"
+      - "volume_name\\s*="
+    forbidden_patterns:
+      - "open\\('/tmp/"
+      - "os\\.makedirs\\('/tmp"
+    tags:
+      - memory
+      - anti-pattern
+    mock_response: |
+      # /tmp is ephemeral — it does NOT persist across sandbox sessions.
+      # Use /home/daytona/memory/ with a volume_name for cross-session persistence.
+
+      # Correct:
+      interp = DaytonaInterpreter(
+          repo_url="https://github.com/your-org/your-repo",
+          volume_name="rlm-volume-dspy",  # same name across sessions
+          timeout=120,
+      )
+      interp.start()
+      try:
+          interp.execute("""
+      import json, os
+      os.makedirs('/home/daytona/memory/artifacts', exist_ok=True)
+      with open('/home/daytona/memory/artifacts/result.json', 'w') as f:
+          json.dump({'answer': 42}, f)
+      SUBMIT(status='saved')
+      """)
+      finally:
+          interp.shutdown()
+
+  # ── Volume-Aware Document Tools ────────────────────────────────────────
+
+  - name: volume_aware_document_tools
+    prompt: |
+      What volume-aware helpers are available inside Daytona sandbox code
+      for loading content from the durable volume? List the specific helper
+      functions like load_text_from_volume and workspace_read.
+    expected_patterns:
+      - "load_text_from_volume|load_from_volume|load_document|workspace_read"
+      - "/home/daytona/memory"
+    forbidden_patterns:
+      - "os\\.makedirs\\('/tmp"
+      - "open\\('/tmp"
+      - "(?m)^[^#\\n]*'/tmp/"
+    tags:
+      - memory
+      - tools
+    mock_response: |
+      # Volume-aware helpers available inside sandbox code:
+      # load_text_from_volume(path)  — loads durable mounted-volume content
+      # load_from_volume(path)       — loads file contents from volume
+      # process_document(...)        — targeted at mounted-volume content
+      # workspace_read(path)         — low-level transient workspace helper (NOT durable)
+
+      # Example:
+      result = interp.execute("""
+      content = load_text_from_volume('/home/daytona/memory/artifacts/report.txt')
+      print(f'Loaded {len(content)} chars')
+      SUBMIT(size=len(content))
+      """)
+      print(result.size)

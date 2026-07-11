@@ -68,6 +68,7 @@ class RLMConfig:
 def load_content(state_path: str) -> str:
     """Load content from RLM state."""
     import json as _json
+
     with open(state_path, encoding="utf-8") as f:
         state = _json.load(f)
     return state.get("content", "")

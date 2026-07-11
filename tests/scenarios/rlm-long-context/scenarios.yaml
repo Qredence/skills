@@ -1,0 +1,204 @@
+# Test scenarios for rlm-long-context skill evaluation
+# Covers chunking scripts, rlm-subcall delegation, result synthesis,
+# query-guided selection, and codebase concatenation.
+# This is an EXPERIMENTAL skill.
+
+config:
+  model: gpt-4
+  max_tokens: 2000
+  temperature: 0.3
+
+scenarios:
+  # ── Chunking Scripts ──────────────────────────────────────────────────
+
+  - name: rank_chunks_query_guided
+    prompt: |
+      I have a large log file and only want to process the most relevant
+      chunks for a query about timeout errors. How do I select only the
+      relevant chunks instead of processing everything?
+    expected_patterns:
+      - "rank_chunks\\.py"
+      - "\\-\\-query|--query"
+      - "\\-\\-top-k|--top-k|top.k"
+    forbidden_patterns:
+      - "parallel_semantic_map"
+    tags:
+      - long-context
+      - chunking
+      - query-guided
+    mock_response: |
+      # Use rank_chunks.py to select only the most relevant chunks (5-10x speedup)
+      python3 scripts/rank_chunks.py \
+        --query "find all timeout errors" \
+        --top-k 10 \
+        -o relevant_chunks.txt
+
+      # This filters chunks by relevance before delegation — skip irrelevant chunks entirely.
+
+  - name: semantic_chunking_script
+    prompt: |
+      Show how to chunk a large structured log file using content-aware
+      semantic boundaries rather than fixed sizes.
+    expected_patterns:
+      - "semantic_chunk\\.py"
+      - "\\-\\-state|\\-\\-type"
+    forbidden_patterns:
+      - "\\[i:i\\+\\d+\\]"
+    tags:
+      - long-context
+      - chunking
+      - semantic
+    mock_response: |
+      # Content-aware chunking — auto-detects content type
+      python3 scripts/semantic_chunk.py --state .claude/rlm_state/state.pkl
+
+      # Force specific content type for log files
+      python3 scripts/semantic_chunk.py --type log
+
+      # Or for markdown documentation
+      python3 scripts/semantic_chunk.py --type markdown
+
+  - name: codebase_concatenation
+    prompt: |
+      I want to analyze an entire Python codebase. How do I prepare it for
+      RLM long-context processing?
+    expected_patterns:
+      - "codebase_concat\\.py"
+      - "\\-\\-root|\\-\\-output"
+    forbidden_patterns: []
+    tags:
+      - long-context
+      - codebase
+    mock_response: |
+      # Concatenate all source files into a single processable file
+      python3 scripts/codebase_concat.py \
+          --root ./src \
+          --output codebase.txt
+
+      # Include only specific file types
+      python3 scripts/codebase_concat.py \
+          --root ./src \
+          --output codebase.txt \
+          -i '*.py' '*.md' '*.yaml'
+
+      # Exclude test directories
+      python3 scripts/codebase_concat.py \
+          --root ./src \
+          --output codebase.txt \
+          --exclude-dirs node_modules .git __pycache__
+
+  # ── rlm-subcall Delegation ────────────────────────────────────────────
+
+  - name: delegate_chunk_to_subcall
+    prompt: |
+      Show the correct YAML structure to delegate a chunk to rlm-subcall
+      for analysis. Include all required fields.
+    expected_patterns:
+      - "rlm-subcall"
+      - "chunk_path"
+      - "query"
+      - "chunk_id"
+    forbidden_patterns: []
+    tags:
+      - long-context
+      - delegation
+    mock_response: |
+      # Delegate each selected chunk to rlm-subcall:
+      subagent: rlm-subcall
+      input:
+        query: "Find all ERROR entries and their timestamps"
+        chunk_path: ".claude/rlm_state/chunks/chunk_001.txt"
+        chunk_id: "chunk_001"
+        format: "json"
+
+      # Expected output from rlm-subcall:
+      # {
+      #   "chunk_id": "chunk_001",
+      #   "relevant": [{"point": "...", "evidence": "...", "confidence": "high"}],
+      #   "missing": ["what could not be determined"],
+      #   "suggested_queries": ["follow-up questions"]
+      # }
+
+  # ── Result Synthesis ──────────────────────────────────────────────────
+
+  - name: synthesize_subcall_results
+    prompt: |
+      After collecting results from multiple rlm-subcall delegations, how
+      do I synthesize them into a final answer? Only include high and medium
+      confidence findings.
+    expected_patterns:
+      - "relevant"
+      - "confidence.*high.*medium|high.*medium.*confidence"
+      - "findings\\.append|findings ="
+      - "SUBMIT"
+    forbidden_patterns: []
+    tags:
+      - long-context
+      - synthesis
+    mock_response: |
+      result = interp.execute("""
+      import json
+
+      findings = []
+      for r in all_results:
+          for item in r.get('relevant', []):
+              if item['confidence'] in ('high', 'medium'):
+                  findings.append(item)
+
+      # Deduplicate
+      seen = set()
+      unique = [f for f in findings if f['point'] not in seen and not seen.add(f['point'])]
+
+      SUBMIT(findings=unique, total=len(unique))
+      """, variables={'all_results': all_results})
+      print(result.findings)
+      print(result.total)
+
+  # ── EXPERIMENTAL Label ────────────────────────────────────────────────
+
+  - name: experimental_label_and_production_guidance
+    prompt: |
+      Is rlm-long-context suitable for production use? What should I use instead?
+    expected_patterns:
+      - "EXPERIMENTAL|experimental"
+      - "rlm.*production|production.*rlm"
+    forbidden_patterns: []
+    tags:
+      - long-context
+      - guidance
+    mock_response: |
+      # rlm-long-context is EXPERIMENTAL — for research, evaluation, and alternative strategies.
+      # For production use, prefer the rlm skill which uses the fleet-rlm package
+      # with Daytona sandboxes.
+
+      # Use rlm-long-context when:
+      # - Evaluating alternative RLM chunking strategies
+      # - Researching optimization techniques
+      # - Comparing processing approaches
+      # NOT for production workloads — use rlm instead.
+
+  # ── No Chunk Pasting ──────────────────────────────────────────────────
+
+  - name: never_paste_chunks_into_context
+    prompt: |
+      I'm processing a 500MB log file. Should I read each chunk and paste
+      it into the main agent chat for analysis?
+    expected_patterns:
+      - "rlm-subcall"
+      - "chunk_path"
+    forbidden_patterns:
+      - "paste.*chunk|chunk.*paste|main.*context.*chunk|chunk.*main.*context"
+    tags:
+      - long-context
+      - anti-pattern
+    mock_response: |
+      # NEVER paste entire chunks into the main chat context — this causes context overflow.
+      # Instead, delegate each chunk to rlm-subcall via chunk_path:
+
+      subagent: rlm-subcall
+      input:
+        query: "Find error patterns"
+        chunk_path: ".claude/rlm_state/chunks/chunk_001.txt"
+        chunk_id: "chunk_001"
+
+      # The subagent reads the file directly; you only quote findings (<1KB) back.
