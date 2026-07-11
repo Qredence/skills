@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Converter"
+  short_description: "Convert agent definitions between MD and TOML formats"
+  default_prompt: "Convert the specified agent file(s) between Markdown (with YAML frontmatter) and TOML formats. Use for transforming agent configurations between rich MD format (with tool restrictions) and simple TOML format (with sandbox modes). Can convert single files or batch convert entire directories."
