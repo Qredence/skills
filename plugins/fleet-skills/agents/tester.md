@@ -1,1 +1,0 @@
-../../.agents/sub-agents/tester.md

@@ -83,8 +83,6 @@ export class MockCopilotClient implements CopilotClient {
  * - Falls back to mock client if SDK unavailable
  */
 export class SkillCopilotClient implements CopilotClient {
-  private static readonly SKILLS_DIR = ".github/skills";
-
   private basePath: string;
   private skillsDir: string;
   private useMock: boolean;
@@ -93,7 +91,8 @@ export class SkillCopilotClient implements CopilotClient {
 
   constructor(basePath?: string, useMock: boolean = false) {
     this.basePath = basePath ?? process.cwd();
-    this.skillsDir = join(this.basePath, SkillCopilotClient.SKILLS_DIR);
+    // Skill packages live at the repo root (e.g. figma-agent/<skill>/).
+    this.skillsDir = this.basePath;
     this.useMock = useMock || !checkCopilotAvailable();
     this.mockClient = new MockCopilotClient();
   }
@@ -113,10 +112,13 @@ export class SkillCopilotClient implements CopilotClient {
 
     const contextParts: string[] = [];
 
-    // Load main SKILL.md
-    const skillMd = join(skillDir, "SKILL.md");
-    if (existsSync(skillMd)) {
+    // Load the main document used by either skill format.
+    const skillMd = ["SKILL.md", "SKILLS.md"]
+      .map((filename) => join(skillDir, filename))
+      .find((path) => existsSync(path));
+    if (skillMd) {
       contextParts.push(`# Skill: ${skillName}\n\n`);
+      contextParts.push(`# Source: ${skillMd.split("/").pop()}\n\n`);
       contextParts.push(readFileSync(skillMd, "utf-8"));
     }
 
@@ -204,6 +206,10 @@ Generate only code. Follow the patterns from the skill documentation exactly.
     try {
       const session = await client.createSession({
         model: config.model,
+        onPermissionRequest: () => ({
+          kind: "denied-by-permission-request-hook",
+          message: "The evaluation harness does not permit tool execution.",
+        }),
       });
 
       try {

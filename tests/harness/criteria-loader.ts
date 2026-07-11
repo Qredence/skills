@@ -6,7 +6,7 @@
  */
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import type {
   AcceptanceCriteria,
   CodePattern,
@@ -24,8 +24,28 @@ import {
 // Constants
 // =============================================================================
 
-const SKILLS_DIR = ".github/skills";
+/**
+ * Skill packages live at the repository root (e.g. figma-agent/<skill>/SKILLS.md).
+ * Top-level dirs that are never skill packages.
+ */
+const EXCLUDED_TOP_LEVEL = new Set([
+  "archive",
+  "scripts",
+  "tests",
+  "plugins",
+  "docs",
+  ".agents",
+  ".github",
+  ".git",
+  ".venv",
+  ".ruff_cache",
+  ".claude",
+  ".claude-plugin",
+  ".cursor-plugin",
+  "node_modules",
+]);
 const CRITERIA_FILENAME = "references/acceptance-criteria.md";
+const SKILL_DOCUMENTS = ["SKILL.md", "SKILLS.md"] as const;
 
 // =============================================================================
 // AcceptanceCriteriaLoader
@@ -54,7 +74,8 @@ export class AcceptanceCriteriaLoader {
 
   constructor(basePath?: string) {
     this.basePath = basePath ?? process.cwd();
-    this.skillsDir = join(this.basePath, SKILLS_DIR);
+    // Skills live at the repo root under package dirs (e.g. figma-agent/).
+    this.skillsDir = this.basePath;
   }
 
   /**
@@ -67,20 +88,23 @@ export class AcceptanceCriteriaLoader {
       return skills;
     }
 
-    const entries = readdirSync(this.skillsDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      if (entry.isDirectory() || entry.isSymbolicLink()) {
-        const criteriaPath = join(
-          this.skillsDir,
-          entry.name,
-          CRITERIA_FILENAME
-        );
-        if (existsSync(criteriaPath)) {
-          skills.push(entry.name);
-        }
+    const visit = (directory: string, relative: string): void => {
+      if (relative === "archive" || relative.startsWith("archive/")) return;
+      if (relative && this.findSkillDocument(relative)) {
+        skills.push(relative);
+        return;
       }
-    }
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+        // At repo root, only descend into skill package directories.
+        if (!relative && EXCLUDED_TOP_LEVEL.has(entry.name)) continue;
+        const childRelative = relative
+          ? `${relative}/${entry.name}`
+          : entry.name;
+        visit(join(directory, entry.name), childRelative);
+      }
+    };
+    visit(this.skillsDir, "");
 
     return skills.sort();
   }
@@ -91,12 +115,28 @@ export class AcceptanceCriteriaLoader {
   load(skillName: string): AcceptanceCriteria {
     const criteriaPath = join(this.skillsDir, skillName, CRITERIA_FILENAME);
 
-    if (!existsSync(criteriaPath)) {
-      throw new Error(`Acceptance criteria not found: ${criteriaPath}`);
+    if (existsSync(criteriaPath)) {
+      const content = readFileSync(criteriaPath, "utf-8");
+      return this.parseCriteria(skillName, criteriaPath, content);
     }
 
-    const content = readFileSync(criteriaPath, "utf-8");
-    return this.parseCriteria(skillName, criteriaPath, content);
+    const skillDocument = this.findSkillDocument(skillName);
+    if (!skillDocument) {
+      throw new Error(`Skill document not found: ${join(this.skillsDir, skillName)}`);
+    }
+    return createAcceptanceCriteria({
+      skillName,
+      sourcePath: skillDocument,
+      language: "python",
+    });
+  }
+
+  private findSkillDocument(skillName: string): string | undefined {
+    for (const filename of SKILL_DOCUMENTS) {
+      const path = join(this.skillsDir, skillName, filename);
+      if (existsSync(path)) return path;
+    }
+    return undefined;
   }
 
   /**
