@@ -3,11 +3,15 @@
 LiteLLM-based skill evaluator.
 
 Evaluates skills by:
-1. Loading scenarios from tests/scenarios/<skill>/scenarios.yaml
-2. Loading acceptance criteria from .github/skills/<skill>/references/acceptance-criteria.md
+1. Loading optional scenarios from tests/scenarios/<skill-id>/scenarios.yaml
+2. Loading skill context from <package>/<skill>/SKILL.md or SKILLS.md
+   (falls back to optional acceptance-criteria.md under .github/skills/ if present)
 3. Calling LiteLLM proxy with skill context
 4. Evaluating responses against expected/forbidden patterns
-5. Reporting results in similar format to the harness
+5. Reporting results in a harness-compatible summary format
+
+Active skills are discovered under package dirs at the repo root (e.g. figma-agent/).
+The archive/ tree is excluded.
 """
 
 import os

@@ -16,7 +16,11 @@ def parse_frontmatter(content):
     for line in frontmatter_text.split("\n"):
         if ":" in line:
             key, val = line.split(":", 1)
-            frontmatter[key.strip()] = val.strip()
+            value = val.strip()
+            # Strip simple YAML quoting used in skill frontmatter.
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+                value = value[1:-1]
+            frontmatter[key.strip()] = value
     return frontmatter
 
 

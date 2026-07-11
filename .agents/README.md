@@ -1,45 +1,36 @@
 # Agent Configuration Directory
 
-This directory contains specialized sub-agent configurations for different tasks. Agents are defined in **Markdown format with YAML frontmatter**, which provides rich tool restrictions and formatting.
-
-Use the `agent-converter` skill to convert these to TOML format for Codex agents.
+Specialized sub-agent configs for this monorepo. Agents use **Markdown + YAML frontmatter** (tool lists and rich instructions).
 
 ## Structure
 
-```
+```text
 .agents/
-├── sub-agents/           # Task-specific agent definitions
-│   ├── explorer.md       # Read-only code exploration
-│   ├── tester.md         # Test execution
-│   ├── implementer.md    # Code implementation
-│   └── evaluator.md      # Skills evaluation
-└── README.md             # This file
+├── sub-agents/           # Task-specific agent definitions (optional)
+├── mcp/                  # MCP server configs (optional)
+├── skills/               # Skill-specific agent configs (optional)
+└── README.md
 ```
 
-## Converting to TOML
+## Converting to TOML (Codex)
 
-To convert agents for Codex:
+The converter lives in the archive:
 
 ```bash
-# Convert single agent
-python3 skills/agent-converter/scripts/convert_agent.py .agents/sub-agents/explorer.md
-
-# Convert all agents
-python3 skills/agent-converter/scripts/convert_agent.py --batch .agents/sub-agents/
+python3 archive/agent-converter/scripts/convert_agent.py .agents/sub-agents/explorer.md
+python3 archive/agent-converter/scripts/convert_agent.py --batch .agents/sub-agents/
 ```
 
-## Agent Reference
+## Typical agent roles
 
 | Agent | Tools | Purpose |
 |-------|-------|---------|
-| **explorer** | Read, Grep, Glob | Locate files, symbols, imports; produce impact analysis |
-| **tester** | Read, Bash, Glob, Grep | Run Microsoft skills harness, execute Vitest tests |
-| **implementer** | Read, Write, Edit, Bash, Glob, Grep | Implement features, refactor code, create files |
-| **evaluator** | Read, Glob, Grep | Analyze skill coverage, map scenarios to criteria |
+| **explorer** | Read, Grep, Glob | Locate files, symbols, imports; impact analysis |
+| **tester** | Read, Bash, Glob, Grep | Run harness and Vitest |
+| **implementer** | Read, Write, Edit, Bash, Glob, Grep | Implement features and refactors |
+| **evaluator** | Read, Glob, Grep | Skill coverage and scenario mapping |
 
-## Markdown Format
-
-All agents use Markdown with YAML frontmatter:
+## Markdown format
 
 ```markdown
 ---
@@ -54,10 +45,10 @@ tools:
 
 # Agent Name
 
-Detailed instructions in markdown...
+Detailed instructions...
 ```
 
-## Tool Permissions
+## Tool permissions
 
 | Tool | Read-Only Agents | Edit Agents |
 |------|------------------|-------------|
@@ -68,19 +59,8 @@ Detailed instructions in markdown...
 | Write | ❌ | ✅ |
 | Edit | ❌ | ✅ |
 
-**Sandbox mode is derived from tools:**
-- Only `Read`, `Grep`, `Glob` → `read-only`
-- Any `Write`, `Edit`, `Bash` → `allow-edits`
+**Sandbox mode:** only `Read`/`Grep`/`Glob` → read-only; any `Write`/`Edit`/`Bash` → allow-edits.
 
-## Usage
+## Testing integration
 
-These agents are invoked automatically by the orchestration system based on task requirements. The `developer_instructions` field (TOML) or markdown body (MD) provides context and constraints for each agent type.
-
-## Integration with Microsoft Skills Framework
-
-The **tester** and **evaluator** agents are designed to work with the Microsoft skills testing framework in `tests/`:
-
-- **tester**: Runs `bun run harness` commands and Vitest tests
-- **evaluator**: Analyzes acceptance criteria and scenario coverage
-
-See `tests/AGENTS.md` for detailed testing harness documentation.
+Tester/evaluator agents use the harness under `tests/`. See `tests/AGENTS.md` and the root `README.md`.

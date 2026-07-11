@@ -16,11 +16,13 @@ You are an AI assistant working in the Qredence Skills monorepo. Please adhere t
 - Do not use `flake8`, `black`, `isort`, or `autopep8`.
 
 ## Skill Creation
-- When asked to create a new skill, ALWAYS use the scaffolding script first to ensure the correct directory structure:
-  `uv run python scripts/init_skill.py <skill-name> --path skills/`
-- Every skill MUST have a `SKILL.md` file at its root.
-- To package and validate a skill, use: `uv run python scripts/package_skill.py skills/<skill-name>`
+- When asked to create a new skill, ALWAYS use the scaffolding script first:
+  `uv run python scripts/init_skill.py <skill-name> --path figma-agent/`
+- Every skill MUST have a `SKILLS.md` (Figma-native) or `SKILL.md` at its root.
+- To package and validate a skill, use:
+  `uv run python scripts/package_skill.py figma-agent/<skill-name>`
 
 ## Monorepo Context
-- The repository contains multiple independent skills under the `skills/` directory.
-- Ensure any global changes (like updating CI or root scripts) do not inadvertently break individual skills.
+- Active skills live under package directories at the repo root (currently `figma-agent/`).
+- Historical skills live under `archive/` and are excluded from discovery.
+- Ensure global changes (CI, scripts, harness) do not break active skill packages.

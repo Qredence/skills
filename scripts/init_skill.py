@@ -1,9 +1,10 @@
 import argparse
 import os
 import textwrap
+from pathlib import Path
 
 
-def init_skill(name, path):
+def init_skill(name: str, path: str) -> bool:
     skill_dir = os.path.join(path, name)
     if os.path.exists(skill_dir):
         print(f"Error: Skill directory '{skill_dir}' already exists.")
@@ -14,22 +15,33 @@ def init_skill(name, path):
     os.makedirs(os.path.join(skill_dir, "references"))
     os.makedirs(os.path.join(skill_dir, "assets"))
 
+    # Figma Design Agent packages use SKILLS.md; everything else uses SKILL.md.
+    path_norm = Path(path).as_posix().rstrip("/")
+    use_figma_doc = path_norm == "figma-agent" or path_norm.endswith("/figma-agent")
+    doc_name = "SKILLS.md" if use_figma_doc else "SKILL.md"
+
     skill_md_content = textwrap.dedent(f"""\
         ---
         name: {name}
-        description: A brief description of the {name} skill.
+        description: "A brief description of the {name} skill."
         ---
 
         # {name}
 
-        ## System Prompt
-        Write the prompt instructions for your skill here.
+        ## Purpose
+        Describe what this skill does and when to use it.
+
+        ## Workflow
+        1. Clarify scope from the current selection or user request.
+        2. Apply the skill with concrete, evidence-backed steps.
+        3. Report findings or deliverables clearly.
         """)
 
-    with open(os.path.join(skill_dir, "SKILL.md"), "w") as f:
+    doc_path = os.path.join(skill_dir, doc_name)
+    with open(doc_path, "w") as f:
         f.write(skill_md_content)
 
-    print(f"Successfully initialized skill '{name}' in '{skill_dir}'")
+    print(f"Successfully initialized skill '{name}' in '{skill_dir}' ({doc_name})")
 
     # Best-effort plugin sync (no-op when plugins/ has no package).
     try:

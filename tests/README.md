@@ -1,147 +1,81 @@
 # Skill Evaluation Test Harness
 
+TypeScript harness for discovering skills and evaluating skill-guided generation.
+
 ## Quick Start
 
 ```bash
 cd tests
 pnpm install
-pnpm harness --list                              # List available skills
-pnpm harness azure-ai-projects-py --mock --verbose # Run evaluation
-pnpm test                                        # Run unit tests
+pnpm harness --list                                      # List active skills
+pnpm harness figma-agent/accessibility-audit --mock --verbose
+pnpm test                                                # Unit tests
 ```
+
+> **Note:** If `pnpm` hooks fail in some environments, run binaries directly:
+> `./node_modules/.bin/vitest run` and `./node_modules/.bin/tsx harness/runner.ts --list`.
 
 ## Overview
 
-A TypeScript test framework for evaluating AI-generated code against the active skills in `../skills/`. Powered by the [GitHub Copilot SDK](https://github.com/github/copilot-sdk).
+Active skills live at the **repository root** under package directories (currently `figma-agent/`). The harness:
 
-**Workflow:**
-1. Discover active skill documents under `../skills/` (excluding archived content)
-2. Load `SKILL.md` or `SKILLS.md` plus optional references as context
-3. Run targeted scenarios, or a smoke scenario when no scenario file exists
-4. Generate and evaluate code using the Copilot SDK (or mock responses)
-5. Report results via console, markdown, or JSON
+1. Discovers `SKILL.md` / `SKILLS.md` under skill packages (excludes `archive/`)
+2. Loads optional scenarios from `tests/scenarios/<skill-id>/scenarios.yaml`
+3. Falls back to a smoke scenario when no scenario file exists
+4. Generates code via the [GitHub Copilot SDK](https://github.com/github/copilot-sdk) (or mocks)
+5. Scores output against optional acceptance criteria patterns
+
+Skill IDs are hierarchical, e.g. `figma-agent/accessibility-audit`.
 
 ## Architecture
 
-```
+```text
 tests/
 ├── harness/
-│   ├── types.ts              # Type definitions
-│   ├── criteria-loader.ts    # Discovers skill documents and legacy criteria
-│   ├── evaluator.ts          # Validates code against patterns
-│   ├── copilot-client.ts     # Wraps Copilot SDK (with mock fallback)
-│   ├── runner.ts             # Main CLI runner
-│   ├── ralph-loop.ts         # Iterative improvement loop
-│   ├── feedback-builder.ts   # LLM-actionable feedback generator
-│   ├── index.ts              # Package exports
+│   ├── types.ts
+│   ├── criteria-loader.ts    # Discovers skill documents
+│   ├── evaluator.ts
+│   ├── copilot-client.ts
+│   ├── runner.ts             # CLI entry (pnpm harness)
+│   ├── ralph-loop.ts
+│   ├── feedback-builder.ts
+│   ├── skill-catalog.test.ts
 │   └── reporters/
-│       ├── console.ts        # Pretty console output
-│       └── markdown.ts       # Markdown report generation
-│
-├── scenarios/
-│   └── <skill-name>/
-│       └── scenarios.yaml    # Test scenarios for the skill
-│
-├── fixtures/                 # Test fixtures
-├── package.json              # Dependencies (pnpm)
-├── tsconfig.json             # TypeScript config
-└── vitest.config.ts          # Test configuration
+├── scenarios/                # Optional per-skill scenarios
+│   └── figma-agent/<skill>/scenarios.yaml
+├── schemas/
+│   └── skill-scenarios.schema.json
+├── package.json
+└── vitest.config.ts
 ```
 
 ## CLI Usage
 
 ```bash
-# Basic usage
-pnpm harness <skill-name>
+pnpm harness <skill-id>
 
-# Options
-pnpm harness azure-ai-projects-py \
-    --mock                  # Use mock responses (no Copilot SDK)
-    --verbose               # Show detailed output
-    --filter basic          # Filter scenarios by name/tag
-    --output json           # Output format (text/json)
+pnpm harness figma-agent/accessibility-audit \
+    --mock \
+    --verbose \
+    --filter basic \
+    --output json \
     --output-file report.json
 
 # Ralph Loop (iterative improvement)
-pnpm harness azure-ai-projects-py \
-    --ralph                 # Enable iterative improvement
-    --max-iterations 5      # Max iterations per scenario
-    --threshold 80          # Quality threshold (0-100)
+pnpm harness figma-agent/accessibility-audit \
+    --ralph \
+    --max-iterations 5 \
+    --threshold 80 \
+    --mock
 ```
 
-## Ralph Loop
+## Adding scenarios for a skill
 
-The Ralph Loop enables iterative code improvement by re-generating code until quality thresholds are met:
+Scenarios are optional. Create:
 
+```text
+tests/scenarios/figma-agent/<skill-name>/scenarios.yaml
 ```
-Generate → Evaluate → Analyze → Re-generate (with feedback)
-    ↑                                    │
-    └────────────────────────────────────┘
-         (Loop until threshold met)
-```
-
-**Stop conditions:**
-- Quality threshold met (default: 80)
-- Perfect score (100)
-- Max iterations reached (default: 5)
-- No improvement between iterations
-- Score regression
-
-## Programmatic Usage
-
-```typescript
-import {
-  AcceptanceCriteriaLoader,
-  CodeEvaluator,
-  SkillEvaluationRunner,
-  RalphLoopController,
-  createRalphConfig,
-} from './harness';
-
-// Simple evaluation
-const loader = new AcceptanceCriteriaLoader();
-const criteria = loader.load('azure-ai-projects-py');
-const evaluator = new CodeEvaluator(criteria);
-
-const result = evaluator.evaluate(code, 'my-test');
-console.log(`Score: ${result.score}`);
-
-// Full runner
-const runner = new SkillEvaluationRunner({ useMock: true });
-const summary = await runner.run('azure-ai-projects-py');
-
-// With Ralph Loop
-const ralphSummary = await runner.runWithLoop('azure-ai-projects-py', undefined, {
-  maxIterations: 5,
-  qualityThreshold: 80,
-});
-```
-
-## Adding Tests for a New Skill
-
-### 1. Create Acceptance Criteria
-
-Create `.github/skills/<skill-name>/references/acceptance-criteria.md`:
-
-```markdown
-# Acceptance Criteria: skill-name
-
-## Imports
-
-### ✅ Correct
-\`\`\`python
-from azure.ai.mymodule import MyClient
-\`\`\`
-
-### ❌ Incorrect
-\`\`\`python
-from azure.ai.mymodule.models import MyClient  # Wrong location
-\`\`\`
-```
-
-### 2. Create Test Scenarios
-
-Create `tests/scenarios/<skill-name>/scenarios.yaml`:
 
 ```yaml
 config:
@@ -152,93 +86,58 @@ config:
 scenarios:
   - name: basic_usage
     prompt: |
-      Create a basic example using the SDK.
+      Summarize how this skill should be applied to a Figma selection.
     expected_patterns:
-      - "DefaultAzureCredential"
+      - "selection"
     forbidden_patterns:
-      - "hardcoded-endpoint"
+      - "TODO"
     tags:
       - basic
     mock_response: |
-      from azure.identity import DefaultAzureCredential
-      # ... working example
+      # Mock response used in --mock mode
 ```
 
-### 3. Run Tests
+Then:
 
 ```bash
-pnpm harness <skill-name> --mock --verbose
+pnpm harness figma-agent/<skill-name> --mock --verbose
 pnpm test
 ```
 
-## Evaluation Scoring
+## Real SDK evaluation
 
-| Factor | Impact |
-|--------|--------|
-| Syntax error | -100 |
-| Incorrect pattern found | -15 each |
-| Error finding | -20 each |
-| Warning finding | -5 each |
-| Correct pattern matched | +5 each |
+### Local (Copilot CLI)
 
-A result **passes** if it has no error-severity findings.
+1. `npm install -g @github/copilot`
+2. Authenticate with `/login`
+3. Run without `--mock`
 
-## Test Coverage
+### CI / PAT
 
-**123 skills with 1114 test scenarios**
-
-| Language | Skills | Scenarios |
-|----------|--------|-----------|
-| Core | 5 | 51 |
-| Python | 41 | 333 |
-| .NET | 28 | 286 |
-| TypeScript | 23 | 249 |
-| Java | 26 | 195 |
+Set `GH_TOKEN` or `GITHUB_TOKEN` with **Copilot Requests** permission:
 
 ```bash
-pnpm harness --list  # See all available skills
+export GH_TOKEN="..."
+pnpm harness figma-agent/accessibility-audit --verbose
+```
+
+## Real-LLM evaluation (LiteLLM)
+
+From the repo root (alternative to Copilot SDK):
+
+```bash
+LITELLM_API_KEY="..." \
+LITELLM_PROXY_URL="..." \
+LITELLM_DEFAULT_MODEL="..." \
+uv run python scripts/evaluate_skills_litellm.py
 ```
 
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| No skills found | Check `acceptance-criteria.md` exists in `references/` |
-| Copilot SDK unavailable | Use `--mock` flag or set up PAT authentication (see below) |
-| Tests fail with real Copilot | Mock responses are hand-crafted; review criteria flexibility |
+| No skills found | Ensure `figma-agent/<skill>/SKILLS.md` exists and you run from `tests/` or pass the repo root correctly |
+| Archive skills appear | They should not; `archive/` is excluded from discovery |
+| Copilot SDK unavailable | Use `--mock` or configure PAT auth |
 
-## Real SDK Evaluation
-
-The harness supports two authentication methods for real Copilot SDK evaluation:
-
-### Local Development (Copilot CLI)
-
-1. Install Copilot CLI: `npm install -g @github/copilot`
-2. Run `copilot` and authenticate via `/login`
-3. Run without `--mock`: `pnpm harness azure-ai-projects-py --verbose`
-
-### CI/CD (PAT Authentication)
-
-For automated pipelines, use a Personal Access Token:
-
-1. Create a fine-grained PAT at https://github.com/settings/personal-access-tokens/new
-2. Add the **"Copilot Requests"** permission
-3. Set the token as environment variable `GH_TOKEN` or `GITHUB_TOKEN`
-
-```bash
-export GH_TOKEN="your-pat-with-copilot-requests-permission"
-pnpm harness azure-ai-projects-py --verbose
-```
-
-### GitHub Actions Workflows
-
-| Workflow | Trigger | Mode | Purpose |
-|----------|---------|------|---------|
-| `test-harness.yml` | PR, push to main | Mock | Fast, deterministic CI |
-| `skill-evaluation.yml` | Nightly, manual | Real SDK | Quality measurement |
-
-To enable real SDK evaluation in GitHub Actions:
-
-1. Create repository secret `COPILOT_TOKEN` with PAT (Copilot Requests permission)
-2. Set repository variable `ENABLE_REAL_EVAL=true`
-3. Trigger manually via Actions tab, or wait for nightly run
+See also [`AGENTS.md`](AGENTS.md) for agent-oriented testing instructions.

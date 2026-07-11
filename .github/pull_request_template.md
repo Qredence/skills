@@ -19,7 +19,7 @@
 - [ ] My code follows the style guidelines of this project (run `uv run ruff check .`)
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation (e.g. `SKILL.md`)
+- [ ] I have made corresponding changes to the documentation (e.g. `SKILLS.md` / `SKILL.md`)
 - [ ] My changes generate no new warnings
 - [ ] Any dependent changes have been merged and published in downstream modules
-- [ ] If this PR adds a new skill, it successfully packages via `uv run python scripts/package_skill.py skills/<skill-name>`
+- [ ] If this PR adds a new skill, it successfully packages via `uv run python scripts/package_skill.py figma-agent/<skill-name>`
