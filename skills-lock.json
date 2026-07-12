@@ -1,0 +1,329 @@
+{
+  "version": 1,
+  "skills": {
+    "accessibility-audit": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/accessibility-audit/SKILL.md",
+      "computedHash": "dd76ff38dcff2f6ef53c4b97fb6efc5536d12af9fe74b3e9f00041637bebd766"
+    },
+    "affinity-mapping": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/affinity-mapping/SKILL.md",
+      "computedHash": "ac51a83e09f545c4cfe13b22297df04cea8460581b6641240369bc3f575a1a42"
+    },
+    "animation-consistency-check": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/animation-consistency-check/SKILL.md",
+      "computedHash": "8df58e2f29e7f100d5debfa5acca82210a62ea4c4e92b5f1f3c8f8c6bb868a7c"
+    },
+    "apply-color-variables": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/apply-color-variables/SKILL.md",
+      "computedHash": "fe9bd7f402fddff69e5d1f4c18def1cbcdc1e7b25ee6416a16607d83f6adcbeb"
+    },
+    "base-ui-primitive-composition": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/base-ui-primitive-composition/SKILL.md",
+      "computedHash": "70a5f879ec69c3c669cc659646e53fc309e93885abb253289e28c10372d1b0c4"
+    },
+    "branch-review-summary": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/branch-review-summary/SKILL.md",
+      "computedHash": "16b8cae00f3f965b65cb8bb69bbfea27e49080c8270b6184ac1db5e4dfca091d"
+    },
+    "brand-kit-asset-generator": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/brand-kit-asset-generator/SKILL.md",
+      "computedHash": "7fc6b067b5f464f1643cc1ba0d68ec17941044253fb3685085ab962877588ccf"
+    },
+    "build-from-prd": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/build-from-prd/SKILL.md",
+      "computedHash": "31b5c1ea49f0ac571c6bce1bed71ba96f3935e3f7f6eb40b8964ccf55bb4e9a1"
+    },
+    "code-connect-mapper": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/code-connect-mapper/SKILL.md",
+      "computedHash": "abd89f8e19617fa5ebce76df0fbf6474e8aad9c5f631791d279a8fba7c60c266"
+    },
+    "color-token-format-normalizer": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/color-token-format-normalizer/SKILL.md",
+      "computedHash": "119cc9e784ef692f31a955cd62e62e6de6570498552b0c1394fa79f3792f5855"
+    },
+    "comment-triage": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/comment-triage/SKILL.md",
+      "computedHash": "c9a2f9ef085094adf6c147c2e9eea17654a50ddf58ae0d225015f3189dd551ba"
+    },
+    "competitive-teardown": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/competitive-teardown/SKILL.md",
+      "computedHash": "a4ba64092967820fa5f0b325370d89e3e1fed25aa9bdcddef770b9430cd4291f"
+    },
+    "component-audit": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/component-audit/SKILL.md",
+      "computedHash": "ebe08978701e5b6b94e7eb5ad7c38aa5195f40ca8742d42f733b274f03d032d6"
+    },
+    "component-naming-sync": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/component-naming-sync/SKILL.md",
+      "computedHash": "576579e898d5111db1403b364def79727321f132a3268c4644cc80edd2bbcd74"
+    },
+    "container-layout-normalizer": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/container-layout-normalizer/SKILL.md",
+      "computedHash": "b4030c751bac18a56bbeb22fc2f4cd6b43b519a2f2ba4f5b31601c6978371530"
+    },
+    "content-inventory": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/content-inventory/SKILL.md",
+      "computedHash": "41aff72470ba6832051bc17c89bc17637c41ca0083458824c8030440a9276eb5"
+    },
+    "content-tone-review": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/content-tone-review/SKILL.md",
+      "computedHash": "d952ba85e4105e9261cacdd3d8a14a021e372949d6461a2d6d38e6d9a8501ef2"
+    },
+    "cva-variant-generator": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/cva-variant-generator/SKILL.md",
+      "computedHash": "212fc415c153b5d8af0379f41d725935a159c91759258fa54a164403fa490c13"
+    },
+    "deck-from-outline": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/deck-from-outline/SKILL.md",
+      "computedHash": "fd7e833af625be4e5ad0a1f45f1bb629a4f4ecf9575156dd1372a522704c2cce"
+    },
+    "design-brief-generator": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/design-brief-generator/SKILL.md",
+      "computedHash": "42c6913b43a7c77b23bf0b8f2fa6189fb932051ba534c4ccbcc0c366f3879b9f"
+    },
+    "design-change-diff": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/design-change-diff/SKILL.md",
+      "computedHash": "382c5bf92c1018c0d0ecd024d530e94859a5409e252d2321ef1c8b542c9b4536"
+    },
+    "design-crit": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/design-crit/SKILL.md",
+      "computedHash": "ee69c7a202f5e80b8c28c3dca32ba0179b80cf0c73d8cf080db84318997f2d52"
+    },
+    "design-tokens-sync": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/design-tokens-sync/SKILL.md",
+      "computedHash": "1c9241058ee1dbc461700f04bf3e30501aa51a53a4453952d9270ea0435391a4"
+    },
+    "dev-handoff-prep": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/dev-handoff-prep/SKILL.md",
+      "computedHash": "fc0e82214643c233f1ce231ceb28c967cb9c05dacff11ea2e1680900fede25d1"
+    },
+    "figma-to-code-component": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/figma-to-code-component/SKILL.md",
+      "computedHash": "72f1398a39d16e5d87553903bdd414a1c4fa00c6609542f537b54609e0e9c871"
+    },
+    "file-cleanup": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/file-cleanup/SKILL.md",
+      "computedHash": "f26fc4d8c6ab4f559de8f2634dd6e5fa7b429308aefdd280a0ab4ba858e0cec7"
+    },
+    "follow-ds-guidelines": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/follow-ds-guidelines/SKILL.md",
+      "computedHash": "06e6fa132e15fd1bdf44a112e99ab591194f7dc8b5207d0b86c36dfb034f0a09"
+    },
+    "handoff-summary": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/handoff-summary/SKILL.md",
+      "computedHash": "f250f27bd7870fc16db774f30e35c170b7259e841c82b566fe8f0c4609019b02"
+    },
+    "heuristic-evaluation": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/heuristic-evaluation/SKILL.md",
+      "computedHash": "c174f8f12d198704ac82a896c287727c8f63812ada2171275eac7acb0f2380bb"
+    },
+    "journey-map-builder": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/journey-map-builder/SKILL.md",
+      "computedHash": "a4edffce5a713979fc7879dbfa0e609f88dd1968b269daba44fb092762c3eddd"
+    },
+    "legacy-styles-to-variables": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/legacy-styles-to-variables/SKILL.md",
+      "computedHash": "aa854e672ee184e4c86b92ace3c15d56a55f496dfb5e19ef17b82cbff28bcd03"
+    },
+    "library-health-report": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/library-health-report/SKILL.md",
+      "computedHash": "a736da3e17ee1660e64ff47e431b3fa26016cf7b30d985dc3c1fc518375a9b1b"
+    },
+    "localization-readiness": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/localization-readiness/SKILL.md",
+      "computedHash": "9a767eb3aa3d8ec476633979315015698171060482b5f5437a6ef334b7ff8068"
+    },
+    "microcopy-generator": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/microcopy-generator/SKILL.md",
+      "computedHash": "b033d54284817c3e8775a45af5157adfadbe45cd891d27ec4494f255053c78a2"
+    },
+    "motion-spec-generator": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/motion-spec-generator/SKILL.md",
+      "computedHash": "487e5ed22195e6ad58ced4b5a1298258aaf0031fe7bbeb3082c92e8daf5312f3"
+    },
+    "naming-convention-enforcer": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/naming-convention-enforcer/SKILL.md",
+      "computedHash": "2998cabcac7024283b746bc7db131607b21832699d2deb38333d13aeb2bdb0d2"
+    },
+    "persona-builder": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/persona-builder/SKILL.md",
+      "computedHash": "d174dac04596889d505f812c8d990eb1cc5cb5842384544a55f732b06a2a5179"
+    },
+    "plugin-widget-recommender": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/plugin-widget-recommender/SKILL.md",
+      "computedHash": "32212874ae42d65b350209679ae887507683132e2ad452c2bfbb7b887d3e6acd"
+    },
+    "prototype-from-flow": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/prototype-from-flow/SKILL.md",
+      "computedHash": "f469f1868048ccf0f0e22b77549e7b879e9aaa36e595676858ae7325a3c02698"
+    },
+    "prototype-qa": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/prototype-qa/SKILL.md",
+      "computedHash": "74692e6df03b77f47d50638cb29e68dc9b224f3bc4af7fa74570bd4d0e5f8d19"
+    },
+    "rename-layers-batch": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/rename-layers-batch/SKILL.md",
+      "computedHash": "8edebef148ebb6b17f9c608f80de3665ffd03008f204685d2cd1a0573b22445f"
+    },
+    "responsive-breakpoint-check": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/responsive-breakpoint-check/SKILL.md",
+      "computedHash": "a762357176c2f770dec9844ed0d2c81c8d0bfac9f614e46d2cc952d3ab380053"
+    },
+    "semantic-color-audit": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/semantic-color-audit/SKILL.md",
+      "computedHash": "094f8f9562fa53e8ad87c70f754fd774b146f5b34a1401dd13a2f199d62cc0c7"
+    },
+    "shadcn-component-structure": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/shadcn-component-structure/SKILL.md",
+      "computedHash": "795041f8a27d85887ef4d35c514b95e1dc4c2e22a4b07d27246ab66bcfffd765"
+    },
+    "site-launch-checklist": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/site-launch-checklist/SKILL.md",
+      "computedHash": "367229b11f3d2ae6436c2f87b6e7a15ec0e86e5dbaf15c07a2bf487e9d2d7982"
+    },
+    "spacing-scale-enforcer": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/spacing-scale-enforcer/SKILL.md",
+      "computedHash": "9efe4cc2a5ba0b90df3edd9c081bd26b7b4bed2d08dc4a5c95376c68363b2a8b"
+    },
+    "states-completeness-check": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/states-completeness-check/SKILL.md",
+      "computedHash": "3d7ee6cdff95d4fbb6abb5b3f8cb84ba9fcad92a2c6534422eaf3b9b4df16844"
+    },
+    "sticky-synthesis": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/sticky-synthesis/SKILL.md",
+      "computedHash": "502bba5f05e3f9d0e2bf4fcf619f8173e26a52d1cc674e2234c6dc6ca4fe7d8f"
+    },
+    "tailwind-class-order-check": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/tailwind-class-order-check/SKILL.md",
+      "computedHash": "c84bc968dbcdaa966d63e48f1f055260062d56e3b166fe8fe8952b790013fda4"
+    },
+    "token-tailwind-theme-sync": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/token-tailwind-theme-sync/SKILL.md",
+      "computedHash": "64f53ff06237ff7189d6f933f6af45a5b4e5e8cf5a3f7ffcfaa747d686066579"
+    },
+    "variable-driven-prototype": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/variable-driven-prototype/SKILL.md",
+      "computedHash": "d41dbd0ff77ff59029947b61364be41f6fc0eb4744354537074f3002a7f2e554"
+    },
+    "visual-consistency-check": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/visual-consistency-check/SKILL.md",
+      "computedHash": "7ece6a7587877dbf8bf8f8b204bed9b64501ce93b649eef55626bf011a401c3f"
+    },
+    "wire-up-interactions": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/wire-up-interactions/SKILL.md",
+      "computedHash": "5ea05ff33cd69a01678a708e95ae0f5581fd04ef05d7c76eb3363cab82db1f4e"
+    },
+    "workshop-facilitator": {
+      "source": "qredence/skills",
+      "sourceType": "github",
+      "skillPath": "skills/figma-agent/workshop-facilitator/SKILL.md",
+      "computedHash": "35d12878b819377bdacbc143bf46e0e25c12943e4ac08c282dcb7ad6f0f97380"
+    }
+  }
+}
