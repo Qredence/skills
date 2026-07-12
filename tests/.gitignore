@@ -24,6 +24,7 @@ node_modules/
 # (Test scenarios should be in scenarios/<skill>/scenarios.yaml)
 *.py
 !__init__.py
+!test_skills_catalog.py
 *.java
 *.cs
 *.bicep
