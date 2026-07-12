@@ -1,24 +1,17 @@
 import argparse
-import os
 import textwrap
 from pathlib import Path
 
 
 def init_skill(name: str, path: str) -> bool:
-    skill_dir = os.path.join(path, name)
-    if os.path.exists(skill_dir):
+    skill_dir = Path(path) / name
+    if skill_dir.exists():
         print(f"Error: Skill directory '{skill_dir}' already exists.")
         return False
 
-    os.makedirs(skill_dir)
-    os.makedirs(os.path.join(skill_dir, "scripts"))
-    os.makedirs(os.path.join(skill_dir, "references"))
-    os.makedirs(os.path.join(skill_dir, "assets"))
-
-    # Figma Design Agent packages use SKILLS.md; everything else uses SKILL.md.
-    path_norm = Path(path).as_posix().rstrip("/")
-    use_figma_doc = path_norm == "figma-agent" or path_norm.endswith("/figma-agent")
-    doc_name = "SKILLS.md" if use_figma_doc else "SKILL.md"
+    (skill_dir / "scripts").mkdir(parents=True)
+    (skill_dir / "references").mkdir()
+    (skill_dir / "assets").mkdir()
 
     skill_md_content = textwrap.dedent(f"""\
         ---
@@ -37,19 +30,14 @@ def init_skill(name: str, path: str) -> bool:
         3. Report findings or deliverables clearly.
         """)
 
-    doc_path = os.path.join(skill_dir, doc_name)
-    with open(doc_path, "w") as f:
-        f.write(skill_md_content)
+    canonical_document = skill_dir / "SKILL.md"
+    canonical_document.write_text(skill_md_content, encoding="utf-8")
 
-    print(f"Successfully initialized skill '{name}' in '{skill_dir}' ({doc_name})")
+    path_norm = Path(path).as_posix().rstrip("/")
+    if path_norm == "skills/figma-agent" or path_norm.endswith("/skills/figma-agent"):
+        (skill_dir / "SKILLS.md").write_text(skill_md_content, encoding="utf-8")
 
-    # Best-effort plugin sync (no-op when plugins/ has no package).
-    try:
-        from sync_plugins import sync_fleet_skills
-
-        sync_fleet_skills()
-    except Exception as e:
-        print(f"Warning: Plugin sync skipped: {e}")
+    print(f"Successfully initialized skill '{name}' in '{skill_dir}'")
 
     return True
 
@@ -59,8 +47,8 @@ if __name__ == "__main__":
     parser.add_argument("name", help="Name of the skill to create")
     parser.add_argument(
         "--path",
-        default="figma-agent/",
-        help="Path where the skill directory will be created (default: figma-agent/)",
+        default="skills/figma-agent/",
+        help="Path where the skill directory will be created (default: skills/figma-agent/)",
     )
     args = parser.parse_args()
 
