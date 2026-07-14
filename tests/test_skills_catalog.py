@@ -18,7 +18,7 @@ class SkillsCatalogTests(unittest.TestCase):
     def test_active_figma_skills_are_published_from_standard_root(self) -> None:
         active_skills = sorted((REPO_ROOT / "skills" / "figma-agent").glob("*/SKILL.md"))
 
-        self.assertEqual(len(active_skills), 55)
+        self.assertEqual(len(active_skills), 56)
         self.assertFalse((REPO_ROOT / "figma-agent").exists())
 
     def test_validator_accepts_the_catalogue(self) -> None:
