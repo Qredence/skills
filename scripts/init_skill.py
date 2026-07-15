@@ -1,18 +1,33 @@
+"""Initialize a new Figma agent skill directory."""
+
+from __future__ import annotations
+
 import argparse
+import re
+import sys
 import textwrap
 from pathlib import Path
 
 
-def init_skill(name: str, path: str) -> bool:
-    skill_dir = Path(path) / name
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_SKILLS_ROOT = REPO_ROOT / "skills" / "figma-agent"
+KEBAB = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+
+
+def init_skill(name: str, path: Path) -> int:
+    if not KEBAB.match(name):
+        print(
+            f"Error: Skill name must be kebab-case (got '{name}').",
+            file=sys.stderr,
+        )
+        return 1
+
+    skill_dir = path / name
     if skill_dir.exists():
-        print(f"Error: Skill directory '{skill_dir}' already exists.")
-        return False
+        print(f"Error: Skill directory '{skill_dir}' already exists.", file=sys.stderr)
+        return 1
 
-    (skill_dir / "scripts").mkdir(parents=True)
-    (skill_dir / "references").mkdir()
-    (skill_dir / "assets").mkdir()
-
+    skill_dir.mkdir(parents=True)
     skill_md_content = textwrap.dedent(f"""\
         ---
         name: {name}
@@ -30,26 +45,23 @@ def init_skill(name: str, path: str) -> bool:
         3. Report findings or deliverables clearly.
         """)
 
-    canonical_document = skill_dir / "SKILL.md"
-    canonical_document.write_text(skill_md_content, encoding="utf-8")
-
-    path_norm = Path(path).as_posix().rstrip("/")
-    if path_norm == "skills/figma-agent" or path_norm.endswith("/skills/figma-agent"):
-        (skill_dir / "SKILLS.md").write_text(skill_md_content, encoding="utf-8")
-
+    (skill_dir / "SKILL.md").write_text(skill_md_content, encoding="utf-8")
     print(f"Successfully initialized skill '{name}' in '{skill_dir}'")
+    return 0
 
-    return True
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("name", help="Kebab-case name of the skill to create")
+    parser.add_argument(
+        "--path",
+        type=Path,
+        default=DEFAULT_SKILLS_ROOT,
+        help=f"Directory for the new skill (default: {DEFAULT_SKILLS_ROOT})",
+    )
+    args = parser.parse_args()
+    return init_skill(args.name, args.path.resolve())
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Initialize a new skill.")
-    parser.add_argument("name", help="Name of the skill to create")
-    parser.add_argument(
-        "--path",
-        default="skills/figma-agent/",
-        help="Path where the skill directory will be created (default: skills/figma-agent/)",
-    )
-    args = parser.parse_args()
-
-    init_skill(args.name, args.path)
+    raise SystemExit(main())

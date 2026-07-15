@@ -2,18 +2,17 @@
 
 ## Active catalogue
 
-Active skills live under `skills/figma-agent/<skill-name>/`.
+Installable skills live under `skills/figma-agent/<skill-name>/`.
 
-- `SKILL.md` is canonical and is installed by `skills.sh`.
-- `SKILLS.md` is generated from `SKILL.md` for direct Figma uploads.
-- `archive/` is documentation only; it must never contain `SKILL.md`.
+- `SKILL.md` is the only skill document. It is installed by `skills.sh`.
+- `archive/` is documentation only. It must never contain `SKILL.md`.
+- Do not add duplicate upload documents (`SKILLS.md`) or plugin-manager stubs.
 
 ## Create or update a skill
 
 ```bash
 uv run python scripts/init_skill.py my-new-skill
 # edit skills/figma-agent/my-new-skill/SKILL.md
-uv run python scripts/sync_figma_documents.py
 ```
 
 Use kebab-case names. Keep `name` and `description` in YAML frontmatter; `name` must match the directory name.
@@ -21,7 +20,6 @@ Use kebab-case names. Keep `name` and `description` in YAML frontmatter; `name` 
 ## Validation
 
 ```bash
-uv run python scripts/sync_figma_documents.py --check
 uv run python scripts/validate_skills.py
 uv run python tests/test_skills_catalog.py
 uv run ruff check .
