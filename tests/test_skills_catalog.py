@@ -21,6 +21,7 @@ class SkillsCatalogTests(unittest.TestCase):
         self.assertEqual(errors, [], msg="\n".join(errors))
 
     def test_every_skill_dir_has_skill_md_only(self) -> None:
+        self.assertTrue(FIGMA_SKILLS_ROOT.is_dir(), msg=f"Active skills root directory '{FIGMA_SKILLS_ROOT}' does not exist.")
         skill_dirs = sorted(p for p in FIGMA_SKILLS_ROOT.iterdir() if p.is_dir())
         self.assertGreater(len(skill_dirs), 0)
         self.assertFalse((REPO_ROOT / "figma-agent").exists())
