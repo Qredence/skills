@@ -13,6 +13,7 @@ FIGMA_SKILLS_ROOT = SKILLS_ROOT / "figma-agent"
 FRONTMATTER = re.compile(r"\A---\s*\n(?P<body>.*?)\n---\s*\n", re.DOTALL)
 NAME = re.compile(r"^name:\s*[\"']?(?P<name>[a-z0-9-]+)[\"']?\s*$", re.MULTILINE)
 DESCRIPTION = re.compile(r"^description:\s*.+$", re.MULTILINE)
+KEBAB = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
 def validate() -> list[str]:
@@ -27,15 +28,20 @@ def validate() -> list[str]:
         errors.append("No active skills found under skills/figma-agent")
 
     for skill_dir in skill_dirs:
-        canonical = skill_dir / "SKILL.md"
-        figma_upload = skill_dir / "SKILLS.md"
         relative_dir = skill_dir.relative_to(REPO_ROOT)
+        if not KEBAB.match(skill_dir.name):
+            errors.append(f"Skill directory must be kebab-case: {relative_dir}")
+
+        canonical = skill_dir / "SKILL.md"
         if not canonical.is_file():
             errors.append(f"Missing canonical document: {relative_dir}/SKILL.md")
             continue
-        if not figma_upload.is_file():
-            errors.append(f"Missing Figma document: {relative_dir}/SKILLS.md")
-            continue
+
+        legacy_upload = skill_dir / "SKILLS.md"
+        if legacy_upload.exists():
+            errors.append(
+                f"Legacy Figma duplicate must not exist: {relative_dir}/SKILLS.md"
+            )
 
         content = canonical.read_text(encoding="utf-8")
         match = FRONTMATTER.match(content)
@@ -51,8 +57,6 @@ def validate() -> list[str]:
             )
         if not DESCRIPTION.search(match.group("body")):
             errors.append(f"Missing frontmatter description: {relative_dir}/SKILL.md")
-        if canonical.read_bytes() != figma_upload.read_bytes():
-            errors.append(f"Figma document differs from canonical: {relative_dir}")
 
     for archived_document in (REPO_ROOT / "archive").rglob("SKILL.md"):
         errors.append(

@@ -1,25 +1,20 @@
 ## Description
 
-<!-- Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. -->
+<!-- Summary of the change, motivation, and linked issue if any. -->
 
 ## Type of change
 
-<!-- Please delete options that are not relevant. -->
-
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
 - [ ] Documentation update
-- [ ] New Skill
+- [ ] New skill
 
-## Checklist:
+## Checklist
 
-<!-- Please go through this checklist before submitting your PR. -->
-
-- [ ] My code follows the style guidelines of this project (run `uv run ruff check .`)
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation (e.g. `SKILLS.md` / `SKILL.md`)
-- [ ] My changes generate no new warnings
-- [ ] Any dependent changes have been merged and published in downstream modules
-- [ ] If this PR adds a new skill, it successfully packages via `uv run python scripts/package_skill.py figma-agent/<skill-name>`
+- [ ] Ran `uv run ruff check .` and `uv run ruff format --check .`
+- [ ] Ran `uv run python scripts/validate_skills.py`
+- [ ] Ran `uv run python tests/test_skills_catalog.py`
+- [ ] New or updated skills use kebab-case names matching frontmatter `name`
+- [ ] No `SKILLS.md` duplicates were added
+- [ ] Docs updated if behaviour or catalogue layout changed

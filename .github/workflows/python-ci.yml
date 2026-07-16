@@ -35,6 +35,5 @@ jobs:
 
     - name: Validate skills catalogue
       run: |
-        uv run python scripts/sync_figma_documents.py --check
         uv run python scripts/validate_skills.py
         uv run python tests/test_skills_catalog.py
