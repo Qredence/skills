@@ -22,6 +22,10 @@ def init_skill(name: str, path: Path) -> int:
         )
         return 1
 
+    if path.exists() and not path.is_dir():
+        print(f"Error: Path '{path}' is not a directory.", file=sys.stderr)
+        return 1
+
     skill_dir = path / name
     if skill_dir.exists():
         print(f"Error: Skill directory '{skill_dir}' already exists.", file=sys.stderr)
