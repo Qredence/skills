@@ -38,7 +38,7 @@ def validate() -> list[str]:
             continue
 
         legacy_upload = skill_dir / "SKILLS.md"
-        if legacy_upload.is_file():
+        if legacy_upload.exists():
             errors.append(
                 f"Legacy Figma duplicate must not exist: {relative_dir}/SKILLS.md"
             )
