@@ -61,7 +61,7 @@ If a needed input can be inferred from visible context, proceed and label the as
 - Do not add speculative routes. If the flow source does not mention a branch and visible UI does not imply it, list it as a question.
 
 ## Guardrails
-- Do not say “wired,” “created connections,” “tested the prototype,” or “set the starting frame” unless those actions were actually supported and completed.
+- Do not say "wired," "created connections," "tested the prototype," or "set the starting frame" unless those actions were actually supported and completed.
 - Do not silently skip a described branch because the destination screen is missing.
 - Do not treat a polished happy path as complete when required error, cancel, empty, or back paths are absent.
 - Keep adjacent work as follow-up: screen design, state design, visual critique, motion spec, and accessibility review are separate tasks.
@@ -70,8 +70,8 @@ If a needed input can be inferred from visible context, proceed and label the as
 Start with a short status line: `Prototype plan only` or `Prototype changes applied` if the environment truly supports them.
 
 Then return:
-1. **Scope and assumptions** — frames reviewed, starting frame, flow source, and assumptions.
-2. **Connection map** — table with `From | Element | Trigger | Action | To | Transition | Notes`.
-3. **Missing or ambiguous pieces** — missing frames, unclear destinations, unresolved state logic, or branches needing product decisions.
-4. **Manual wiring checklist** — ordered steps a designer can follow in Figma.
-5. **Follow-up checks** — prototype QA, motion spec, state completeness, or handoff notes when relevant.
+1. **Scope and assumptions** - frames reviewed, starting frame, flow source, and assumptions.
+2. **Connection map** - table with `From | Element | Trigger | Action | To | Transition | Notes`.
+3. **Missing or ambiguous pieces** - missing frames, unclear destinations, unresolved state logic, or branches needing product decisions.
+4. **Manual wiring checklist** - ordered steps a designer can follow in Figma.
+5. **Follow-up checks** - prototype QA, motion spec, state completeness, or handoff notes when relevant.
