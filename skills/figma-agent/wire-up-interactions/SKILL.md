@@ -53,7 +53,7 @@ If an input is missing but obvious from the selected element and nearby annotati
 - Do not change unrelated interactions on the same frame as part of the spec.
 
 ## Guardrails
-- Do not say “added,” “fixed,” “wired,” or “tested” unless the environment actually allowed the edit and verification.
+- Do not say "added," "fixed," "wired," or "tested" unless the environment actually allowed the edit and verification.
 - Do not invent missing destination frames or component variants.
 - Do not replace a working interaction pattern with a more elaborate one unless the requested behavior requires it.
 - Do not leave defaults implicit when the behavior matters; state trigger, action, destination, transition, and verification.
@@ -62,8 +62,8 @@ If an input is missing but obvious from the selected element and nearby annotati
 Start with a status line: `Interaction spec only` or `Interaction change applied` if supported.
 
 Then return:
-1. **Target interaction** — source frame, source element, and intended behavior.
-2. **Recommended configuration** — `Trigger -> Action -> Destination/State -> Transition`.
-3. **Overlay/state details** — only if relevant.
-4. **Assumptions or ambiguities** — what needs confirmation before wiring.
-5. **Manual verification checklist** — exact steps to test after wiring.
+1. **Target interaction** - source frame, source element, and intended behavior.
+2. **Recommended configuration** - `Trigger -> Action -> Destination/State -> Transition`.
+3. **Overlay/state details** - only if relevant.
+4. **Assumptions or ambiguities** - what needs confirmation before wiring.
+5. **Manual verification checklist** - exact steps to test after wiring.
