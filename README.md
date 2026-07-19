@@ -42,7 +42,7 @@ Skills are scoped for Figma design work: selection-first by default, evidence ti
 
 ## Catalogue
 
-**56 skills** in [`skills/figma-agent/`](skills/figma-agent/). Grouped by job below; open a folder for the full `SKILL.md`.
+**57 skills** in [`skills/figma-agent/`](skills/figma-agent/). Grouped by job below; open a folder for the full `SKILL.md`.
 
 ### Accessibility & usability
 
@@ -67,6 +67,7 @@ Skills are scoped for Figma design work: selection-first by default, evidence ti
 | [`naming-convention-enforcer`](skills/figma-agent/naming-convention-enforcer/) | Renaming layers and components to a stated convention |
 | [`rename-layers-batch`](skills/figma-agent/rename-layers-batch/) | Bulk renaming with a simple rule or find/replace |
 | [`semantic-color-audit`](skills/figma-agent/semantic-color-audit/) | Catching raw palette usage where semantic tokens belong |
+| [`shadcn-theme-variables`](skills/figma-agent/shadcn-theme-variables/) | Creating or repairing semantic shadcn theme variables in Figma |
 | [`spacing-scale-enforcer`](skills/figma-agent/spacing-scale-enforcer/) | Mapping arbitrary spacing onto the project scale |
 
 ### Components & code mapping
