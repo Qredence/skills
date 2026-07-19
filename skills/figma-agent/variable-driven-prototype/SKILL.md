@@ -63,9 +63,9 @@ If details are missing but safely inferable from the selected flow, proceed and 
 Start with a status line: `State model spec only` or `State model changes applied` if supported.
 
 Then return:
-1. **State purpose** — what the prototype needs to remember or branch on.
-2. **Variable table** — `Name | Type | Initial value | Allowed values | Purpose | Read by`.
-3. **State changes** — `Source | Trigger | Set/change | Result`.
-4. **Conditional branches** — `Condition | True path | False/fallback path`.
-5. **Reflected UI** — where the state should be visible or affect variants/content.
-6. **Reset and verification checklist** — steps to confirm every branch and restart condition.
+1. **State purpose** - what the prototype needs to remember or branch on.
+2. **Variable table** - `Name | Type | Initial value | Allowed values | Purpose | Read by`.
+3. **State changes** - `Source | Trigger | Set/change | Result`.
+4. **Conditional branches** - `Condition | True path | False/fallback path`.
+5. **Reflected UI** - where the state should be visible or affect variants/content.
+6. **Reset and verification checklist** - steps to confirm every branch and restart condition.
