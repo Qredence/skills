@@ -1,60 +1,69 @@
 ---
 name: wire-up-interactions
-description: "Adds or fixes specific prototype interactions (triggers, actions, animations, overlay settings) on an already-largely-connected prototype, based on a precise spec of what should happen. Use for targeted interaction work, as opposed to prototype-from-flow which builds an entire flow from scratch."
+description: "Produces precise interaction specs for specific prototype behaviors, including source element, trigger, action, destination, overlay behavior, animation, and verification steps. Use when a prototype interaction is missing, wrong, or needs refinement, but treat the result as a manual wiring plan unless the current Figma Agent session explicitly supports interaction editing."
 ---
 
 # Wire Up Interactions
 
 ## Purpose
-Add or correct specific prototype interactions against a precise spec, without rebuilding the whole flow.
+Define exactly how one or more prototype interactions should be configured, without rebuilding the whole flow or claiming unsupported interaction edits.
 
 ## Operating Role
-Act as a Figma design-file producer for this specific skill. Create or structure the requested artifact in the file when enough context exists; otherwise return the smallest useful plan and ask only for blocking inputs.
+Act as a Figma interaction-spec reviewer. Inspect the selected frame, element labels, annotations, and any existing visible prototype details. Produce a precise trigger/action configuration and verification checklist. Apply changes only if the current environment explicitly supports interaction editing.
+
+## Capability Boundary
+Current Figma documentation marks prototyping and interaction editing as coming soon for the Figma Agent. Default to specification-only output. Do not claim to add, replace, remove, or test prototype interactions unless that capability is available and the action was actually completed.
 
 ## Supported Context
-- Default scope is the current selection. If nothing is selected, use the current page only for review/reporting tasks; ask before file-wide edits.
-- Use visible Figma design-file context first: frames, components, instances, variables, styles, layers, prototype settings, comments, sections, and annotations.
-- Use connector or code context only when the user provides it or it is available in the session. Mark anything based on missing context as an assumption.
-- Ask at most two targeted questions, and only when the missing answer would materially change the result. Otherwise proceed with stated assumptions.
+- Start from the selected source element, frame, component, or comment thread.
+- If the source element is unclear, ask one targeted question rather than scanning the whole file.
+- Use visible Figma context first: frame names, layer names, component states, variables, comments, annotations, and any visible prototype settings.
+- Use connector or code context only when supplied. Mark missing context as an assumption.
 
 ## Activation Boundary
-- A prototype mostly works but a specific interaction is missing, wrong, or needs refinement
-- Adding a new one-off interaction (e.g. a new overlay, a new hover state) to an existing prototype
+Use this skill when:
+- A specific interaction is missing, incorrect, or underspecified.
+- A designer needs exact wiring instructions for a button, link, overlay, component state, hover state, or one-off interaction.
+- A prototype mostly exists and only targeted interaction behavior needs definition.
+
+Do not use this skill for whole-flow planning; use `prototype-from-flow` for that. Do not use it for state modeling; use `variable-driven-prototype` for that.
 
 ## Required Inputs
-- The exact interaction(s) needed: source element, trigger, destination, and desired feel
-- If an input is missing but can be inferred safely from the selection, proceed and label the assumption.
+- Source frame and source element.
+- Intended trigger.
+- Intended destination or state change.
+- Desired motion feel or platform convention, if relevant.
 
-## Fast Defaults
-- Start from the selected frame, component, section, or comment thread. If the user named a scope, use that instead of scanning the whole file.
-- Do the useful first pass without waiting for perfect context. State assumptions briefly and keep moving when the risk is low.
-- Prefer in-file evidence over generic best practices. Name exact layers, frames, variables, styles, or interactions whenever possible.
-- Change only the named interaction unless the user asks for broader prototype QA. Verify trigger, action, destination, and transition.
+If an input is missing but obvious from the selected element and nearby annotations, proceed and label the assumption.
 
 ## Workflow
-1. Locate the source element and check for any existing conflicting interaction on the same trigger; decide whether to replace or add as an additional interaction.
-2. Set the trigger precisely (On click, On hover, While hovering, On drag, While pressing, Mouse enter/leave, Key/gamepad, After delay, Mouse down/up) -- the most common source of "prototype does not feel right" bugs is the wrong trigger type.
-3. Set the action (Navigate to, Open/close/swap overlay, Swap state, Change to, Scroll to, Back, Open link, Open node, Set variable, Conditional) matching the intent exactly, including any variable or condition logic required for state-driven behavior.
-4. Configure animation curve and duration deliberately: prefer spring easing with tuned bounce/duration for natural motion, or ease-in-out with an explicit duration for precise, repeatable timing -- avoid leaving default "instant" when a transition is meant to feel considered.
-5. If the interaction is on a component with variants/interactive-component states, confirm it swaps to the correct variant rather than a visually similar but semantically wrong one.
-6. Test the specific interaction after wiring, describing exactly what happens on trigger.
+1. Identify the interaction scope: source frame, source element, current visible state, and intended user action.
+2. Check for ambiguity: duplicate labels, multiple likely destinations, conflicting annotations, or existing interaction notes that disagree.
+3. Specify the trigger precisely: click/tap, hover, drag, delay, key/gamepad, mouse down/up, or another supported trigger named by the user.
+4. Specify the action precisely: navigate, open/close overlay, swap state, scroll to, back, open link, set variable, or conditional logic as a spec.
+5. Specify destination details: target frame/state/link, overlay placement, dismissal behavior, scroll target, or variable value.
+6. Specify transition details: animation type, duration, easing, direction, and reduced-motion alternative when relevant.
+7. Define verification steps a designer should perform after manually wiring the interaction.
 
-## Figma Execution Limits
-- Keep the task within this skill. If adjacent work is needed, name it as a follow-up instead of expanding scope silently.
-- For report-only prompts, do not alter the file. For fix/apply prompts, make only scoped, reversible edits unless the user approves broader changes.
-- For bulk changes, preview the rule and affected count before applying. Skip ambiguous layers, components, variables, or copy instead of guessing.
-- Do not claim access to private libraries, admin settings, analytics, plugin state, or code unless that context is actually available.
-- Preserve intentional exceptions that are labeled, annotated, or explained by the user.
+## Decision Rules
+- Use the simplest action that matches the user intent.
+- Prefer explicit destinations over inferred destinations when labels are vague.
+- For destructive or confirmation flows, do not recommend outside-click dismissal unless the product explicitly wants it.
+- For hover/focus/pressed behavior, specify component state changes separately from page navigation.
+- Do not change unrelated interactions on the same frame as part of the spec.
 
 ## Guardrails
-- Do not remove or alter unrelated existing interactions on the same frame while fixing the requested one.
-
-## Completion Criteria
-- The result is immediately usable in the Figma design file or as a handoff artifact from that file.
-- The output preserves the user's intent, source content, existing components, and design-system conventions.
-- Assumptions, skipped items, and tradeoffs are visible and short.
-- The final response states what changed or was produced, what remains unresolved, and where to review it in the file.
+- Do not say “added,” “fixed,” “wired,” or “tested” unless the environment actually allowed the edit and verification.
+- Do not invent missing destination frames or component variants.
+- Do not replace a working interaction pattern with a more elaborate one unless the requested behavior requires it.
+- Do not leave defaults implicit when the behavior matters; state trigger, action, destination, transition, and verification.
 
 ## Output Contract
-Return the created or proposed Figma structure first, then list assumptions, variants/states covered, and follow-up decisions. If changes were applied, include exactly what changed.
-- Skill-specific format: A short list: what was added/changed, the exact trigger -> action configuration, and how to verify it.
+Start with a status line: `Interaction spec only` or `Interaction change applied` if supported.
+
+Then return:
+1. **Target interaction** — source frame, source element, and intended behavior.
+2. **Recommended configuration** — `Trigger -> Action -> Destination/State -> Transition`.
+3. **Overlay/state details** — only if relevant.
+4. **Assumptions or ambiguities** — what needs confirmation before wiring.
+5. **Manual verification checklist** — exact steps to test after wiring.
