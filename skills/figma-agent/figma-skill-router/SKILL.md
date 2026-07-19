@@ -26,7 +26,7 @@ Use the request noun and verb to choose within the relevant group.
 | Discover and define | `design-brief-generator`, `build-from-prd`, `persona-builder`, `journey-map-builder`, `workshop-facilitator`, `affinity-mapping`, `sticky-synthesis`, `competitive-teardown`, `deck-from-outline` |
 | Content and brand | `content-inventory`, `content-tone-review`, `microcopy-generator`, `localization-readiness`, `brand-kit-asset-generator` |
 | Layout and construction | `container-layout-normalizer`, `responsive-breakpoint-check`, `spacing-scale-enforcer`, `figma-to-code-component`, `base-ui-primitive-composition`, `shadcn-component-structure`, `cva-variant-generator` |
-| Components and libraries | `component-audit`, `component-naming-sync`, `library-health-report`, `follow-ds-guidelines`, `design-tokens-sync`, `legacy-styles-to-variables`, `apply-color-variables`, `color-token-format-normalizer`, `semantic-color-audit` |
+| Components and libraries | `component-audit`, `component-naming-sync`, `library-health-report`, `follow-ds-guidelines`, `design-tokens-sync`, `legacy-styles-to-variables`, `apply-color-variables`, `color-token-format-normalizer`, `semantic-color-audit`, `shadcn-theme-variables` |
 | Review and quality | `accessibility-audit`, `heuristic-evaluation`, `design-crit`, `visual-consistency-check`, `states-completeness-check`, `site-launch-checklist`, `prototype-qa`, `animation-consistency-check` |
 | Prototypes and motion | `prototype-from-flow`, `wire-up-interactions`, `variable-driven-prototype`, `motion-spec-generator` |
 | Code, changes, and handoff | `code-connect-mapper`, `dev-handoff-prep`, `handoff-summary`, `token-tailwind-theme-sync`, `tailwind-class-order-check`, `design-change-diff`, `branch-review-summary` |
@@ -35,7 +35,7 @@ Use the request noun and verb to choose within the relevant group.
 
 ## Tie-Breakers
 
-Use `component-audit` for one set, `library-health-report` library-wide; `microcopy-generator` writes, `content-inventory` enumerates. `design-crit` is broad feedback, `heuristic-evaluation` usability, `accessibility-audit` access; `journey-map-builder` maps experience, `prototype-from-flow` plans screens. For unmatched requests: `design-brief-generator` (new) or `design-crit` (improve).
+Use `shadcn-theme-variables` for creating or repairing semantic shadcn theme variables in Figma; use `token-tailwind-theme-sync` when Figma variables are already defined and code theme files need to catch up. Use `component-audit` for one set, `library-health-report` library-wide; `microcopy-generator` writes, `content-inventory` enumerates. `design-crit` is broad feedback, `heuristic-evaluation` usability, `accessibility-audit` access; `journey-map-builder` maps experience, `prototype-from-flow` plans screens. For unmatched requests: `design-brief-generator` (new) or `design-crit` (improve).
 
 ## Handoff
 
