@@ -61,8 +61,8 @@ If the full interaction graph is not available, proceed with visible evidence an
 Start with a status line: `Prototype QA partial` or `Prototype QA verified` depending on evidence.
 
 Then return:
-1. **Scope and evidence level** — what was reviewed and what could not be verified.
-2. **Findings** — grouped as `Dead ends`, `Destination risks`, `Overlay risks`, `Orphaned frames`, `State-logic gaps`, and `Ambiguous interactions`.
-3. **Manual test script** — ordered steps for happy path and branches.
-4. **Unverified areas** — what needs manual presentation-mode testing or product confirmation.
-5. **Fix/spec suggestions** — exact interaction specs to create next, without claiming they were applied.
+1. **Scope and evidence level** - what was reviewed and what could not be verified.
+2. **Findings** - grouped as `Dead ends`, `Destination risks`, `Overlay risks`, `Orphaned frames`, `State-logic gaps`, and `Ambiguous interactions`.
+3. **Manual test script** - ordered steps for happy path and branches.
+4. **Unverified areas** - what needs manual presentation-mode testing or product confirmation.
+5. **Fix/spec suggestions** - exact interaction specs to create next, without claiming they were applied.
