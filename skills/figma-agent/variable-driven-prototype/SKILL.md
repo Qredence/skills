@@ -1,61 +1,71 @@
 ---
 name: variable-driven-prototype
-description: "Sets up Figma variables and conditional prototype logic to make a prototype genuinely stateful -- e.g. a login flow that remembers auth state, a cart that updates a count and total, or a settings toggle that persists across screens. Use when a prototype needs to demonstrate real interactive logic, not just static screen-to-screen navigation."
+description: "Designs a state model for a variable-driven Figma prototype, including variables, initial values, set-variable moments, conditional branches, reflected UI states, and manual verification steps. Use when a prototype needs remembered state or branching logic, but treat the result as a specification unless the current Figma Agent session explicitly supports prototype interaction editing."
 ---
 
 # Variable Driven Prototype
 
 ## Purpose
-Make a prototype behave statefully using Figma variables, conditionals, and expressions, instead of only linear screen jumps.
+Turn desired stateful prototype behavior into a clear variable and conditional-logic specification that a designer can implement manually or use later when interaction editing is supported.
 
 ## Operating Role
-Act as a Figma design-file producer for this specific skill. Create or structure the requested artifact in the file when enough context exists; otherwise return the smallest useful plan and ask only for blocking inputs.
+Act as a prototype state-model designer. Define the smallest useful set of variables, state transitions, and branch rules. Do not claim to create prototype variables, set-variable actions, conditionals, or bindings unless the current environment explicitly supports those edits and they were actually completed.
+
+## Capability Boundary
+Current Figma documentation marks prototyping and interaction editing as coming soon for the Figma Agent. Figma Agent can use and update variables in documented design contexts, but this skill must not assume it can wire those variables into prototype interactions. Default to specification-only output.
 
 ## Supported Context
-- Default scope is the current selection. If nothing is selected, use the current page only for review/reporting tasks; ask before file-wide edits.
-- Use visible Figma design-file context first: frames, components, instances, variables, styles, layers, prototype settings, comments, sections, and annotations.
-- Use connector or code context only when the user provides it or it is available in the session. Mark anything based on missing context as an assumption.
-- Ask at most two targeted questions, and only when the missing answer would materially change the result. Otherwise proceed with stated assumptions.
+- Start from the selected frame, flow, component, or annotations.
+- Use visible Figma context first: frames, variables, component states, labels, comments, prototype notes, and annotations.
+- Use connector or code context only when supplied. Mark missing context as an assumption.
+- Ask at most two targeted questions if the state model cannot be determined safely.
 
 ## Activation Boundary
-- The prototype needs to reflect state that persists or changes across screens (login status, form input echoed later, a running total, a toggle setting)
-- A demo needs to show branching logic driven by user choices, not a fixed path
+Use this skill when:
+- A prototype needs remembered state, such as auth status, cart count, selected plan, toggle setting, onboarding progress, form value, or eligibility result.
+- A demo needs branching logic based on user choices.
+- A team needs a state table before manually wiring variables and conditionals.
+
+Do not use this skill for ordinary screen-to-screen prototype mapping; use `prototype-from-flow`. Do not use it for a single targeted trigger/action spec; use `wire-up-interactions`.
 
 ## Required Inputs
-- What state needs to be tracked (name, type -- boolean/number/string/color -- and its possible values)
-- Where the state changes (which interactions set it) and where it is read (which screens/conditions depend on it)
-- If an input is missing but can be inferred safely from the selection, proceed and label the assumption.
+- The state to track and why it matters.
+- Where state changes.
+- Where state is read or displayed.
+- The intended initial state for the prototype.
+- Any reset behavior, such as returning to the start, logging out, clearing a cart, or restarting a demo.
 
-## Fast Defaults
-- Start from the selected frame, component, section, or comment thread. If the user named a scope, use that instead of scanning the whole file.
-- Do the useful first pass without waiting for perfect context. State assumptions briefly and keep moving when the risk is low.
-- Prefer in-file evidence over generic best practices. Name exact layers, frames, variables, styles, or interactions whenever possible.
-- Model state as a small variable table before wiring. Test every branch and reset condition.
+If details are missing but safely inferable from the selected flow, proceed and label assumptions.
 
 ## Workflow
-1. Create a variable for each piece of state needed, using a clear name and the correct type, in a collection scoped appropriately (local to the prototype unless it should be a shared design variable too).
-2. Wire "Set variable" actions on the interactions that change state (e.g. a toggle's On click sets a boolean, quantity stepper's clicks increment/decrement a number).
-3. Bind variables to visible properties where state should be reflected directly (e.g. binding a text layer to a number variable for a live count, or a variable-bound instance-swap for a toggle's visual state).
-4. Add conditional actions where the destination or displayed content depends on a variable's value (e.g. "if isLoggedIn is true, navigate to Dashboard, else navigate to Sign in"), using expressions for any calculated logic (e.g. totals, formatted strings).
-5. Verify initial variable values are set sensibly for the prototype's starting frame so the first view is correct before any interaction happens.
-6. Test every branch of every conditional to confirm it resolves to the intended destination/state.
+1. Identify the user-visible behavior that requires state. Reject state that does not affect what the prototype shows or where it goes.
+2. Define the smallest variable table needed. For each variable, specify name, type, allowed values, initial value, purpose, and where it is read.
+3. Define every state change moment. For each, specify source frame/element, trigger, new value, and expected visual or navigation result.
+4. Define every conditional branch. For each, specify condition, true path, false path, and fallback when the value is missing or unexpected.
+5. Define reflected UI bindings as a spec: text shown, visible/invisible layer, variant/state, count, progress, or mode that should reflect the variable.
+6. Define reset logic so repeated demos start from a predictable state.
+7. Produce a manual implementation and verification checklist.
 
-## Figma Execution Limits
-- Keep the task within this skill. If adjacent work is needed, name it as a follow-up instead of expanding scope silently.
-- For report-only prompts, do not alter the file. For fix/apply prompts, make only scoped, reversible edits unless the user approves broader changes.
-- For bulk changes, preview the rule and affected count before applying. Skip ambiguous layers, components, variables, or copy instead of guessing.
-- Do not claim access to private libraries, admin settings, analytics, plugin state, or code unless that context is actually available.
-- Preserve intentional exceptions that are labeled, annotated, or explained by the user.
+## Decision Rules
+- Prefer booleans for simple yes/no state, enumerated strings for named modes, and numbers only when arithmetic or counts matter.
+- Avoid deeply nested conditionals. If logic needs more than two branches, use a small state table rather than prose.
+- Do not create duplicate variables for the same concept.
+- Keep prototype state separate from design-system variables unless the variable truly belongs to the design system.
+- Do not invent business logic not present in the PRD, annotations, or user request.
 
 ## Guardrails
-- Keep variable names and structure simple enough that a teammate could understand the logic by reading the variables panel alone; avoid deeply nested conditionals where a simpler structure would do.
-
-## Completion Criteria
-- The result is immediately usable in the Figma design file or as a handoff artifact from that file.
-- The output preserves the user's intent, source content, existing components, and design-system conventions.
-- Assumptions, skipped items, and tradeoffs are visible and short.
-- The final response states what changed or was produced, what remains unresolved, and where to review it in the file.
+- Do not say variables, bindings, or conditionals were created unless actually applied.
+- Do not encode sensitive or production-like data in prototype state.
+- Do not hide unresolved product decisions inside conditional logic; list them as open questions.
+- Do not over-model. A static prototype with a clear path does not need variables.
 
 ## Output Contract
-Return the created or proposed Figma structure first, then list assumptions, variants/states covered, and follow-up decisions. If changes were applied, include exactly what changed.
-- Skill-specific format: A variable table (name, type, purpose) plus a logic summary of every conditional/set-variable action added and what triggers it.
+Start with a status line: `State model spec only` or `State model changes applied` if supported.
+
+Then return:
+1. **State purpose** — what the prototype needs to remember or branch on.
+2. **Variable table** — `Name | Type | Initial value | Allowed values | Purpose | Read by`.
+3. **State changes** — `Source | Trigger | Set/change | Result`.
+4. **Conditional branches** — `Condition | True path | False/fallback path`.
+5. **Reflected UI** — where the state should be visible or affect variants/content.
+6. **Reset and verification checklist** — steps to confirm every branch and restart condition.
