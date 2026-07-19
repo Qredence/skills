@@ -1,21 +1,23 @@
 ---
 name: figma-skill-router
-description: "Use when a Figma Design agent must choose among installed Figma skills for a request or design-file context."
+description: "Use when a Figma Design agent must choose one installed Figma skill for a request or design-file context."
 ---
 
 # Figma Skill Router
 
-Select and hand off to one installed Figma skill. Skip it when a narrower matching skill is already invoked.
+Choose exactly one installed Figma skill for the current request. Skip this router when a narrower matching skill is already invoked.
 
-## Route
+## Routing Rules
 
-1. Read the goal and strongest context: selection, page, library, comments, branch, PRD, code, or none.
-2. Choose the narrowest index entry. Use check skills for “audit”, “review”, or “find”; use apply skills for “fix”, “apply”, “migrate”, or “standardize”.
-3. Return one primary skill and only one dependent next skill. Ask once only for missing required input.
+1. Read the user goal, requested action, and strongest available context: selection, page, file, library, comments, branch, PRD, code, or none.
+2. Choose the narrowest skill whose trigger and supported context match the request.
+3. Prefer review skills for verbs such as `audit`, `review`, `check`, or `find`; prefer apply skills for verbs such as `fix`, `apply`, `migrate`, or `standardize`.
+4. Route to one skill only. Do not invoke, chain, or mention multiple skills in the same handoff.
+5. Ask once only when a missing input prevents a safe route. Otherwise state the scope assumption.
 
 ## Capability Gate
 
-Treat prototype or interaction work as a plan unless interaction editing is supported. State limits for exports, vector editing, or diagrams/data visualizations; use external context only when supplied.
+Route only to work the current Figma surface can support. For prototype interactions, exports, vector editing, diagrams, data visualizations, external code, analytics, branches, or admin data, prefer a planning or review skill unless the required capability and context are explicitly available in the session.
 
 ## Catalogue Index
 
@@ -35,7 +37,7 @@ Use the request noun and verb to choose within the relevant group.
 
 ## Tie-Breakers
 
-Use `shadcn-theme-variables` for creating or repairing semantic shadcn theme variables in Figma; use `token-tailwind-theme-sync` when Figma variables are already defined and code theme files need to catch up. Use `component-audit` for one set, `library-health-report` library-wide; `microcopy-generator` writes, `content-inventory` enumerates. `design-crit` is broad feedback, `heuristic-evaluation` usability, `accessibility-audit` access; `journey-map-builder` maps experience, `prototype-from-flow` plans screens. For unmatched requests: `design-brief-generator` (new) or `design-crit` (improve).
+Use `shadcn-theme-variables` for creating or repairing semantic shadcn theme variables in Figma; use `token-tailwind-theme-sync` when Figma variables are already defined and code theme files need to catch up. Use `component-audit` for one component set and `library-health-report` for a library-wide review. Use `microcopy-generator` to write copy and `content-inventory` to enumerate it. Use `design-crit` for broad design feedback, `heuristic-evaluation` for usability, and `accessibility-audit` for accessibility. Use `journey-map-builder` to map an experience and `prototype-from-flow` to specify a screen flow. For unmatched requests, use `design-brief-generator` for new work or `design-crit` for improvement work.
 
 ## Handoff
 
@@ -43,10 +45,9 @@ Return only:
 
 ```markdown
 Primary skill: `<skill-name>`
-Why: <request and context in one sentence>
-Scope: <selection, page, file, or assumption>
-Next skill: `<skill-name>` — <only when needed>
+Why: <request and matching context in one sentence>
+Scope: <selection, page, file, or explicit assumption>
 Capability note: <only when relevant>
 ```
 
-Do not list alternatives, perform the work, or send two skills to the same artifact.
+Do not list alternatives, perform the routed work, recommend a dependent skill, or send more than one skill to the same request.
